@@ -153,6 +153,10 @@ Modules in `addon/lua/hl2bl/`:
   are rare to buy) / Sell backpack guns. `RollVendorStats`, `GunPrice/GunSellPrice`
   in sh_loot. Spawn via spawn menu or `hl2bl_spawn_vendor` (superadmin).
 - `sv_campaign.lua` — HL2 campaign map order + start/next commands + auto-advance.
+- `sv_vehicle_seats.lua` — bolts up to 3 passenger seats (`prop_vehicle_prisoner_pod`,
+  parented + local offsets per class) onto HL2 airboats/buggies so co-op players ride
+  along and **fire their handheld weapons** from the seats (pods, unlike the locked
+  driver seat, allow weapon use). Attaches on `OnEntityCreated` + a startup sweep.
 - `cl_statcard.lua` — look-at card + reusable `HL2BL.DrawStatCard` / `DrawArmorCard`.
 - `cl_inventory.lua` — two-pane inventory (`hl2bl_inv`): left equipment paper-doll
   (4 weapon + 4 armor slot tiles, click to unequip), right category tabs
@@ -180,6 +184,8 @@ Modules in `addon/lua/hl2bl/`:
   level (1 = full `LevelScale` curve, 0 = enemies deal base damage).
 - `hl2bl_campaign_start` / `hl2bl_campaign_next` (superadmin) — campaign maps.
 - `hl2bl_campaign_auto <0|1>` (1) — auto-advance at level transitions.
+- `hl2bl_vehicle_seats <0|1>` (1) — bolt 3 passenger seats onto airboats/buggies
+  (co-op riders can sit and shoot their handheld weapon).
 
 ### Adding a new gun
 Add `lua/weapons/hl2bl_<x>.lua` (`SWEP.Base="hl2bl_gun_base"`, set `HL2BL_Kind`,

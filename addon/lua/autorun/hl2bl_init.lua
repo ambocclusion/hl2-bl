@@ -28,6 +28,7 @@ HL2BL.Modules = {
 	{ "server", "hl2bl/sv_armor.lua" },
 	{ "server", "hl2bl/sv_economy.lua" },
 	{ "server", "hl2bl/sv_vendor.lua" },
+	{ "server", "hl2bl/sv_vehicle_seats.lua" },
 	{ "server", "hl2bl/sv_campaign.lua" },
 	{ "server", "hl2bl/sv_updatecheck.lua" },
 	{ "server", "hl2bl/sv_debug.lua" },
