@@ -1,0 +1,6 @@
+"hl2bl"
+{
+	"base"			"sandbox"
+	"title"			"HL2: Borderlands"
+	"menusystem"	"1"
+}

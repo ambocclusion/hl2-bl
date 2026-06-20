@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# hl2bl pre-push: compile-check the mod before publishing history.
+# Opt-in (builds are slow): enable with  git config hl2bl.prepushBuild true
+# Bypass once with: git push --no-verify
+set -euo pipefail
+
+if [ "$(git config --bool hl2bl.prepushBuild 2>/dev/null)" != "true" ]; then
+  exit 0
+fi
+
+root="$(git rev-parse --show-toplevel)"
+echo "pre-push: building mod (hl2bl.prepushBuild=true)..." >&2
+if ! "$root/scripts/build.sh" >/dev/null 2>&1; then
+  echo "pre-push: build FAILED — push aborted. Run scripts/build.sh to see errors." >&2
+  exit 1
+fi
+echo "pre-push: build OK." >&2
+exit 0

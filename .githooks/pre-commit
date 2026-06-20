@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# hl2bl pre-commit guard (Garry's Mod / Lua addon).
+#  1. Optionally lint staged Lua with luacheck if it's installed.
+#  2. Block obviously-wrong commits (binaries built by the old C++ tree).
+# Bypass with: git commit --no-verify
+set -euo pipefail
+
+staged_lua=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.lua$' || true)
+
+# 1. Lua lint (best-effort; skipped if luacheck absent).
+if [ -n "$staged_lua" ] && command -v luacheck >/dev/null 2>&1; then
+  echo "$staged_lua" | xargs luacheck --no-color -q || {
+    echo "pre-commit: luacheck reported issues (commit anyway with --no-verify)." >&2
+    exit 1
+  }
+fi
+
+# 2. Don't let leftover C++ build artifacts sneak in (added/modified only;
+#    deletions of legacy tracked files are fine).
+blocked=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(\.so(\.dbg)?$|/_vpc_/|compile_commands\.json$)' || true)
+if [ -n "$blocked" ]; then
+  echo "pre-commit: refusing to commit build artifacts:" >&2
+  echo "$blocked" | sed 's/^/  - /' >&2
+  exit 1
+fi
+
+exit 0

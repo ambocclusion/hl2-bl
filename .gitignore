@@ -1,0 +1,12 @@
+# hl2bl (Garry's Mod addon)
+*.gma            # compiled addon bundles
+*.bsp.bak
+# editor / OS cruft
+*.swp
+.DS_Store
+.vscode/
+
+# leftover C++ SDK tree on disk from the hl2bl-coop branch (not part of the
+# GMod project; lives in that branch's history)
+/src/
+/game/

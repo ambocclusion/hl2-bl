@@ -1,0 +1,7 @@
+{
+	"title": "HL2: Borderlands",
+	"type": "weapon",
+	"tags": [ "fun" ],
+	"ignore": [ "*.md", ".git/*" ],
+	"description": "Co-op Borderlands-style looter-shooter for Half-Life 2: rolled guns with rarities and elemental mods, loot drops, and leveling, playable on HL2 campaign maps in co-op."
+}
