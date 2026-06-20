@@ -58,8 +58,11 @@ any gamemode, so the gamemode itself is intentionally thin (loadout control).
 ## Workflow (no build step — Lua is interpreted)
 
 ```sh
+scripts/install.sh         # END-USER install: COPIES addon+gamemode into GMod
+                           #   (auto-detects GMod across Steam libraries; survives
+                           #    moving/deleting the repo). Override: GMOD_DIR=...
 scripts/install-hooks.sh   # one-time: core.hooksPath=.githooks
-scripts/deploy.sh          # symlink addon/ -> addons/hl2bl AND gamemodes/hl2bl -> gamemodes/
+scripts/deploy.sh          # DEV: symlink addon/ -> addons/hl2bl AND gamemodes/ (live edits)
 scripts/run.sh [map]       # launch GMod via Steam (default gm_construct;
                            #   pass an HL2 map like d1_trainstation_02 to test co-op campaign)
 ```
