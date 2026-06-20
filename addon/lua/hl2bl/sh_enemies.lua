@@ -12,3 +12,10 @@ HL2BL.EnemyClasses = {
 	npc_zombie = true, npc_fastzombie = true, npc_poisonzombie = true, npc_zombine = true,
 	npc_headcrab = true, npc_headcrab_fast = true, npc_headcrab_black = true,
 }
+
+-- Player-allied NPCs, protected from friendly fire (players/allies can't hurt them).
+HL2BL.FriendlyClasses = {
+	npc_citizen = true, npc_alyx = true, npc_barney = true, npc_kleiner = true,
+	npc_eli = true, npc_mossman = true, npc_magnusson = true, npc_gman = true,
+	npc_vortigaunt = true, npc_dog = true, npc_monk = true, npc_fisherman = true,
+}

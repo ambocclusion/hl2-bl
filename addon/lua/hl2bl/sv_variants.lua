@@ -172,3 +172,24 @@ hook.Add( "OnNPCKilled", "hl2bl_variant_killfeed", function( npc, attacker )
 		end
 	end
 end )
+
+-- Friendly fire: player-allied NPCs can't be hurt by players or other allies
+-- (enemies can still kill them). Uses HL2BL.FriendlyClasses + disposition.
+local function isFriendlyNPC( npc )
+	if not ( IsValid( npc ) and npc:IsNPC() ) then return false end
+	if HL2BL.FriendlyClasses and HL2BL.FriendlyClasses[ npc:GetClass() ] then return true end
+	for _, ply in ipairs( player.GetAll() ) do
+		local d = npc:Disposition( ply )
+		if d == D_LI then return true elseif d == D_HT then return false end
+	end
+	return false
+end
+
+hook.Add( "EntityTakeDamage", "hl2bl_friendly_fire", function( target, dmg )
+	if not isFriendlyNPC( target ) then return end
+	local att = dmg:GetAttacker()
+	if IsValid( att ) and att:IsWeapon() and IsValid( att:GetOwner() ) then att = att:GetOwner() end
+	if IsValid( att ) and ( att:IsPlayer() or isFriendlyNPC( att ) ) then
+		return true   -- block the damage
+	end
+end )
