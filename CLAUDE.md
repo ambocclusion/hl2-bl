@@ -169,3 +169,10 @@ models, `HL2BL_Base*`, `HoldType`, `Primary.Automatic`), then add its class to
 - Match GMod Lua idiom: `sh_/sv_/cl_` file prefixes, `HL2BL` global table namespace,
   `AddCSLuaFile` for client-sent files (handled by the loader in `hl2bl_init.lua`).
 - Commit frequently in small units (see the hooks). No compiled artifacts are tracked.
+- **Balance tables are duplicated docs — keep them in sync.** The "Weapon stats &
+  scaling" tables in `README.md` are hand-computed means from the roll/scaling
+  formulas. If you change base stats (`sh_archetypes.lua`), rarity/element rolls or
+  manufacturer biases (`sh_loot.lua` `buildStats`/`Manufacturers`), or the level
+  curve (`sh_progression.lua` `LevelScale`/`XPForLevel`), recompute and update those
+  README tables in the same change. (Better long-term: emit the tables from the
+  formulas so there's a single source of truth.)
