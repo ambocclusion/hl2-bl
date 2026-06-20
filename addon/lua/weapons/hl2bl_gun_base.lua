@@ -107,9 +107,34 @@ function SWEP:Deploy()
 	local owner = self:GetOwner()
 	if IsValid( owner ) then
 		local vm = owner:GetViewModel()
-		if IsValid( vm ) then vm:SetModel( a.vm ) end
+		if IsValid( vm ) then vm:SetModel( a.vm ); vm:SetPlaybackRate( 1 ) end
 	end
 	return true
+end
+
+-- Stop zoom + restore FOV when put away.
+function SWEP:Holster()
+	self:SetZoom( false )
+	return true
+end
+
+function SWEP:OnRemove() self:SetZoom( false ) end
+
+-- ---- alt-fire: aim-down-sights zoom ---------------------------------------
+function SWEP:SetZoom( on )
+	self.HL2BL_Zoomed = on
+	local owner = self:GetOwner()
+	if IsValid( owner ) and owner:IsPlayer() then
+		owner:SetFOV( on and ( arch( self ).zoomFOV or 55 ) or 0, 0.2 )
+	end
+end
+
+function SWEP:SecondaryAttack()
+	if arch( self ).melee then return end
+	self:SetNextSecondaryFire( CurTime() + 0.3 )
+	if not IsFirstTimePredicted() then return end
+	self:SetZoom( not self.HL2BL_Zoomed )
+	self:EmitSound( "Default.Zoom" )
 end
 
 -- ---- firing ----------------------------------------------------------------
@@ -163,10 +188,11 @@ function SWEP:TryElementProc( victim, attacker )
 end
 
 function SWEP:PrimaryAttack()
+	local a = arch( self )
+	if a.melee then return self:MeleeAttack( a ) end
 	if not self:CanPrimaryAttack() then return end
 	local owner = self:GetOwner()
 	if not IsValid( owner ) then return end
-	local a = arch( self )
 
 	self:EmitSound( a.sound )
 	self:SendWeaponAnim( ACT_VM_PRIMARYATTACK )
@@ -174,7 +200,7 @@ function SWEP:PrimaryAttack()
 	owner:SetAnimation( PLAYER_ATTACK1 )
 	owner:ViewPunch( Angle( -math.Rand( a.recoil * 0.5, a.recoil ), math.Rand( -a.recoil * 0.25, a.recoil * 0.25 ), 0 ) )
 
-	local spread = a.spread * self:GetSpreadMult()
+	local spread = a.spread * self:GetSpreadMult() * ( self.HL2BL_Zoomed and 0.4 or 1 )
 	local wep = self
 	owner:LagCompensation( true )
 	owner:FireBullets( {
@@ -195,19 +221,61 @@ function SWEP:PrimaryAttack()
 	self:SetNextPrimaryFire( CurTime() + 60 / math.max( 1, a.rpm * self:GetFireRateMult() ) )
 end
 
-function SWEP:SecondaryAttack()
+-- Melee swing: hull trace in front, damage + element proc on hit.
+function SWEP:MeleeAttack( a )
+	local owner = self:GetOwner()
+	if not IsValid( owner ) then return end
+	self:SetNextPrimaryFire( CurTime() + 60 / math.max( 1, a.rpm * self:GetFireRateMult() ) )
+
+	local src, dir = owner:GetShootPos(), owner:GetAimVector()
+	local tr = util.TraceHull( {
+		start = src, endpos = src + dir * a.range,
+		mins = Vector( -12, -12, -12 ), maxs = Vector( 12, 12, 12 ),
+		filter = owner, mask = MASK_SHOT_HULL,
+	} )
+
+	self:EmitSound( a.sound )
+	self:SendWeaponAnim( tr.Hit and ACT_VM_HITCENTER or ACT_VM_MISSCENTER )
+	owner:SetAnimation( PLAYER_ATTACK1 )
+	owner:ViewPunch( Angle( -a.recoil, 0, 0 ) )
+
+	if not tr.Hit or CLIENT then return end
+
+	local ent = tr.Entity
+	if IsValid( ent ) then
+		local d = DamageInfo()
+		d:SetAttacker( owner ); d:SetInflictor( self )
+		d:SetDamage( a.dmg * self:GetDamageMult() * HL2BL.LevelScale( self:GetItemLevel() ) )
+		d:SetDamageType( DMG_CLUB )
+		d:SetDamagePosition( tr.HitPos )
+		ent:TakeDamageInfo( d )
+		self:TryElementProc( ent, owner )
+		if a.hitSound then self:EmitSound( a.hitSound ) end
+	end
+	local eff = EffectData(); eff:SetOrigin( tr.HitPos ); eff:SetNormal( tr.HitNormal )
+	util.Effect( "Impact", eff )
 end
 
 function SWEP:Reload()
-	local maxClip = self:HL2BLMaxClip()
-	if self:Clip1() >= maxClip then return end
+	if arch( self ).melee then return end
+	if self:Clip1() >= self:HL2BLMaxClip() then return end
 	if self:GetNWBool( "hl2bl_reloading", false ) then return end
 	if self:GetReserve() <= 0 then return end
 
-	self:SendWeaponAnim( ACT_VM_RELOAD )
-	if IsValid( self:GetOwner() ) then self:GetOwner():SetAnimation( PLAYER_RELOAD ) end
-
+	local owner = self:GetOwner()
 	local t = arch( self ).reload * self:GetReloadMult()
+
+	-- Viewmodel reload animation, scaled to the reload time.
+	self:SendWeaponAnim( ACT_VM_RELOAD )
+	if IsValid( owner ) then
+		owner:SetAnimation( PLAYER_RELOAD )
+		local vm = owner:GetViewModel()
+		if IsValid( vm ) then
+			local dur = vm:SequenceDuration()
+			if dur and dur > 0 then vm:SetPlaybackRate( dur / math.max( 0.1, t ) ) end
+		end
+	end
+
 	self:SetNWBool( "hl2bl_reloading", true )
 	self:SetNextPrimaryFire( CurTime() + t )
 
@@ -220,6 +288,18 @@ function SWEP:Reload()
 			wep:SetClip1( wep:Clip1() + take )
 			wep:SetNWInt( "hl2bl_reserve", wep:GetReserve() - take )
 			wep:SetNWBool( "hl2bl_reloading", false )
+			local o = wep:GetOwner()
+			if IsValid( o ) then local v = o:GetViewModel(); if IsValid( v ) then v:SetPlaybackRate( 1 ) end end
 		end )
 	end
+end
+
+-- Drive reload from the +reload key ourselves. Our guns use a custom reserve
+-- pool (Primary.Ammo "none"), so the engine's ammo-based reload never fires;
+-- this guarantees reload (and its animation) works. Server-side so the anim
+-- networks cleanly to clients.
+function SWEP:Think()
+	if CLIENT then return end
+	local owner = self:GetOwner()
+	if IsValid( owner ) and owner:KeyDown( IN_RELOAD ) then self:Reload() end
 end

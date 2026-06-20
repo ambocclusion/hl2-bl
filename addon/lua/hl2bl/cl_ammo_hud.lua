@@ -18,8 +18,13 @@ hook.Add( "HUDPaint", "hl2bl_ammo_hud", function()
 	if not wep then return end
 
 	local x, y = ScrW() - 40, ScrH() - 56
-	draw.SimpleText( wep:Clip1() .. " / " .. wep:GetNWInt( "hl2bl_reserve", 0 ),
-		"HL2BL.Ammo", x, y, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+	local a = HL2BL.GetArchetype and HL2BL.GetArchetype( wep:GetNWString( "hl2bl_arch", "smg" ) )
+	if a and a.melee then
+		draw.SimpleText( "MELEE", "HL2BL.Ammo", x, y, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+	else
+		draw.SimpleText( wep:Clip1() .. " / " .. wep:GetNWInt( "hl2bl_reserve", 0 ),
+			"HL2BL.Ammo", x, y, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+	end
 
 	local s = HL2BL.GetEntStats( wep )
 	if s and s.name ~= "" then

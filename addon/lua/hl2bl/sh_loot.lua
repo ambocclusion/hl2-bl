@@ -6,7 +6,10 @@
 HL2BL = HL2BL or {}
 
 -- Gun classes eligible to drop / be rendered as loot. Extend as guns are added.
-HL2BL.LootClasses = { "hl2bl_pistol", "hl2bl_smg", "hl2bl_shotgun", "hl2bl_rifle", "hl2bl_sniper" }
+HL2BL.LootClasses = {
+	"hl2bl_pistol", "hl2bl_smg", "hl2bl_shotgun", "hl2bl_rifle", "hl2bl_sniper",
+	"hl2bl_crowbar", "hl2bl_stunbaton",
+}
 
 -- Rarity tiers (higher = stronger rolls).
 HL2BL.Rarity = {

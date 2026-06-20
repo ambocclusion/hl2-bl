@@ -206,8 +206,33 @@ hook.Add( "PlayerInitialSpawn", "hl2bl_inv_init", function( ply )
 	timer.Simple( 1, function() if IsValid( ply ) then syncInventory( ply ) end end )
 end )
 
+-- Starter melee: a Common, level-1 crowbar, equipped (held), not dropped.
+function HL2BL.StarterCrowbarStats()
+	return {
+		archetype = "crowbar", manufacturer = "vanguard",
+		rarity = HL2BL.Rarity.COMMON, itemLevel = 1, element = HL2BL.Element.NONE,
+		damageMult = 1, fireRateMult = 1, spreadMult = 1, reloadMult = 1, magMult = 1,
+		elementChance = 0, elementDamage = 0,
+	}
+end
+
+function HL2BL.GiveStarterCrowbar( ply )
+	if not ( IsValid( ply ) and ply:Alive() ) then return end
+	local w = ply:GetWeapon( "hl2bl_crowbar" )
+	if not IsValid( w ) then w = ply:Give( "hl2bl_crowbar" ) end
+	if IsValid( w ) and w.Configure then w:Configure( "crowbar", HL2BL.StarterCrowbarStats() ) end
+end
+
 hook.Add( "PlayerSpawn", "hl2bl_inv_reequip", function( ply )
-	timer.Simple( 0.3, function() if IsValid( ply ) and ply:Alive() then reEquipAll( ply ) end end )
+	timer.Simple( 0.3, function()
+		if not ( IsValid( ply ) and ply:Alive() ) then return end
+		reEquipAll( ply )
+		HL2BL.GiveStarterCrowbar( ply )
+		-- Hold the crowbar if no gun is equipped in a slot.
+		local hasSlot = false
+		for s = 1, MAX_SLOTS do if slots( ply )[ s ] then hasSlot = true break end end
+		if not hasSlot then ply:SelectWeapon( "hl2bl_crowbar" ) end
+	end )
 end )
 
 HL2BL.SaveInventory = saveInv
