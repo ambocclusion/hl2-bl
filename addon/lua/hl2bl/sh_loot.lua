@@ -212,3 +212,42 @@ function HL2BL.GetEntStats( ent )
 		name          = ent:GetNWString( "hl2bl_name", "" ),
 	}
 end
+
+-- ---- loot beacon targeting -------------------------------------------------
+-- "Look at the colored beacon to grab/inspect" range. ~2 m in source units.
+HL2BL.LOOT_REACH = 110
+local BEACON_DOT = math.cos( math.rad( 22 ) )   -- aim-cone half-angle
+
+-- The world loot the player is looking at (dropped guns w/o owner + armor
+-- pickups) within LOOT_REACH, picking whichever beacon best lines up with their
+-- aim and is actually visible (not behind world geometry). Shared so the stat
+-- card (client) and the extended pickup (server) agree on the target. nil if none.
+function HL2BL.LootBeaconTarget( ply )
+	if not IsValid( ply ) then return nil end
+	local eye, aim = ply:EyePos(), ply:GetAimVector()
+	local reach    = HL2BL.LOOT_REACH
+	local best, bestDot = nil, BEACON_DOT
+
+	local function consider( ent )
+		if not IsValid( ent ) then return end
+		local target = ent:WorldSpaceCenter() + Vector( 0, 0, 18 )   -- toward the beacon base
+		local to     = target - eye
+		local d      = to:Length()
+		if d < 4 or d > reach then return end
+		if aim:Dot( to / d ) < bestDot then return end
+		-- Require line of sight: the beacon renders depth-tested, so if a wall
+		-- hides it you aren't "looking at" it.
+		local tr = util.TraceLine( { start = eye, endpos = target, filter = ply, mask = MASK_SOLID_BRUSHONLY } )
+		if tr.Hit and tr.Fraction < 0.97 then return end
+		bestDot = aim:Dot( to / d ); best = ent
+	end
+
+	for _, class in ipairs( HL2BL.LootClasses ) do
+		for _, e in ipairs( ents.FindByClass( class ) ) do
+			if not IsValid( e:GetOwner() ) then consider( e ) end
+		end
+	end
+	for _, e in ipairs( ents.FindByClass( "hl2bl_armor" ) ) do consider( e ) end
+
+	return best
+end

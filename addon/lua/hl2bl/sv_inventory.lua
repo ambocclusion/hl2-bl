@@ -195,6 +195,21 @@ hook.Add( "PlayerUse", "hl2bl_loot_use", function( ply, ent )
 	end
 end )
 
+-- Extended reach: look at a loot beacon within ~2 m and press E to grab it,
+-- even if your crosshair isn't on the small model. Idempotent vs PlayerUse/ENT:Use
+-- above (a picked-up ent becomes invalid, so a second handler this frame no-ops).
+hook.Add( "KeyPress", "hl2bl_loot_reach", function( ply, key )
+	if key ~= IN_USE then return end
+	if not ( IsValid( ply ) and ply:IsPlayer() and ply:Alive() ) then return end
+	local ent = HL2BL.LootBeaconTarget( ply )
+	if not IsValid( ent ) then return end
+	if ent:IsWeapon() then
+		pickupLoot( ply, ent )            -- dropped gun
+	else
+		ent:Use( ply, ply, USE_ON, 0 )    -- armor world pickup (ENT:Use -> GiveArmor)
+	end
+end )
+
 -- Equip toggle: armor routes to the armor system (its own slot), weapons to the
 -- 4 weapon slots. The same message drives the left paper-doll's click-to-unequip.
 net.Receive( "hl2bl_inv_equip", function( _, ply )

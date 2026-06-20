@@ -97,35 +97,47 @@ function HL2BL.DrawArmorCard( x, y, a )
 	return h
 end
 
--- Look-at card on the HUD (gun loot, or armor world pickups).
+-- Draw the card for a gun or armor entity. Returns true if it drew one.
+local function drawItemCard( ent, x, y )
+	if not IsValid( ent ) then return false end
+
+	if ent:GetClass() == "hl2bl_armor" then
+		local a = util.JSONToTable( ent:GetNWString( "hl2bl_armorjson", "" ) or "" )
+		if not a then return false end
+		local h = HL2BL.DrawArmorCard( x, y, a )
+		draw.SimpleText( "[E] Pick up", "HL2BL.Title", x + CARD_W * 0.5, y + h + 8,
+			Color( 120, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
+		return true
+	end
+
+	if ent:IsWeapon() then
+		local s = HL2BL.GetEntStats( ent )
+		if not s then return false end
+		local h = HL2BL.DrawStatCard( x, y, s )
+		if not IsValid( ent:GetOwner() ) then   -- world loot, not a held gun
+			draw.SimpleText( "[E] Pick up", "HL2BL.Title", x + CARD_W * 0.5, y + h + 8,
+				Color( 120, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
+		end
+		return true
+	end
+
+	return false
+end
+
+-- Look-at card on the HUD: either the item you're aimed straight at (up to ~5 m),
+-- or the loot whose colored beacon you're looking at within ~2 m (forgiving aim).
 hook.Add( "HUDPaint", "hl2bl_statcard", function()
 	local ply = LocalPlayer()
 	if not IsValid( ply ) or not ply:Alive() then return end
 
-	local ent = ply:GetEyeTrace().Entity
-	if not IsValid( ent ) then return end
-	if ent:GetPos():DistToSqr( ply:EyePos() ) > 200 * 200 then return end
-
 	local x, y = ScrW() * 0.56, ScrH() * 0.30
 
-	-- Armor world pickup: stats are carried as JSON on the entity.
-	if ent:GetClass() == "hl2bl_armor" then
-		local a = util.JSONToTable( ent:GetNWString( "hl2bl_armorjson", "" ) or "" )
-		if not a then return end
-		local h = HL2BL.DrawArmorCard( x, y, a )
-		draw.SimpleText( "[E] Pick up", "HL2BL.Title", x + CARD_W * 0.5, y + h + 8,
-			Color( 120, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
-		return
+	local ent = ply:GetEyeTrace().Entity
+	if IsValid( ent ) and ent:GetPos():DistToSqr( ply:EyePos() ) <= 200 * 200 then
+		if drawItemCard( ent, x, y ) then return end
 	end
 
-	-- Weapon (held or world loot).
-	if not ent:IsWeapon() then return end
-	local s = HL2BL.GetEntStats( ent )
-	if not s then return end
-
-	local h = HL2BL.DrawStatCard( x, y, s )
-	if not IsValid( ent:GetOwner() ) then
-		draw.SimpleText( "[E] Pick up", "HL2BL.Title", x + CARD_W * 0.5, y + h + 8,
-			Color( 120, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
+	if HL2BL.LootBeaconTarget then
+		drawItemCard( HL2BL.LootBeaconTarget( ply ), x, y )
 	end
 end )

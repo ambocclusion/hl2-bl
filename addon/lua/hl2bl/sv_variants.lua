@@ -177,10 +177,16 @@ end )
 -- (enemies can still kill them). Uses HL2BL.FriendlyClasses + disposition.
 local function isFriendlyNPC( npc )
 	if not ( IsValid( npc ) and npc:IsNPC() ) then return false end
+	-- Known hostiles are NEVER friendly. This guard is essential: NPC:Disposition
+	-- toward a player is unreliable (director-spawned enemies can report D_LI or
+	-- neutral before they acquire the player), and without it those enemies were
+	-- misclassified as friendly -- blocking all player/bullet damage to them while
+	-- fire/DoT (attacker = the burning NPC, not the player) slipped through.
+	if HL2BL.EnemyClasses and HL2BL.EnemyClasses[ npc:GetClass() ] then return false end
 	if HL2BL.FriendlyClasses and HL2BL.FriendlyClasses[ npc:GetClass() ] then return true end
 	for _, ply in ipairs( player.GetAll() ) do
 		local d = npc:Disposition( ply )
-		if d == D_LI then return true elseif d == D_HT then return false end
+		if d == D_HT then return false elseif d == D_LI then return true end
 	end
 	return false
 end

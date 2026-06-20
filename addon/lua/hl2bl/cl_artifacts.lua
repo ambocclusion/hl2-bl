@@ -1,6 +1,8 @@
 --[[ hl2bl: artifacts UI (client) --------------------------------------------
-	Artifact bag window (O), an active-ability HUD with cooldown ([X] to use),
-	and a look-at card for dropped artifacts.
+	Artifact card + data sync. The bag itself is now the "Artifacts" tab in the
+	main inventory (cl_inventory); O focuses that tab. This file keeps the shared
+	DrawArtifactCard, the active-ability HUD ([X] to use), and the dropped-artifact
+	look-at card.
 ----------------------------------------------------------------------------]]
 HL2BL = HL2BL or {}
 HL2BL.Arts = HL2BL.Arts or { slot = 0, items = {} }
@@ -12,7 +14,7 @@ net.Receive( "hl2bl_art_sync", function()
 	local items = {}
 	for i = 1, n do items[i] = HL2BL.NetReadArtifact() end
 	HL2BL.Arts = { slot = slot, items = items }
-	if IsValid( HL2BL._ArtScroll ) then HL2BL.RebuildArtifacts() end
+	hook.Run( "HL2BL_ArtsUpdated" )   -- refresh the inventory's Artifacts tab
 end )
 
 function HL2BL.DrawArtifactCard( x, y, art )
@@ -35,45 +37,11 @@ function HL2BL.DrawArtifactCard( x, y, art )
 	return h
 end
 
-function HL2BL.RebuildArtifacts()
-	local scroll = HL2BL._ArtScroll
-	if not IsValid( scroll ) then return end
-	scroll:Clear()
-
-	local items = HL2BL.Arts.items
-	if #items == 0 then
-		local l = scroll:Add( "DLabel" ); l:Dock( TOP ); l:DockMargin( 8, 8, 0, 0 )
-		l:SetText( "No artifacts - kill enemies to find them." ); return
-	end
-	for i, art in ipairs( items ) do
-		local row = scroll:Add( "DPanel" )
-		row:Dock( TOP ); row:DockMargin( 4, 4, 4, 4 ); row:SetTall( 170 )
-		row.Paint = function() HL2BL.DrawArtifactCard( 0, 0, art ) end
-
-		local eq = ( i == HL2BL.Arts.slot )
-		local b = vgui.Create( "DButton", row )
-		b:SetPos( 292, 30 ); b:SetSize( 150, 34 )
-		b:SetText( eq and "Equipped (unequip)" or "Equip" )
-		b.DoClick = function() net.Start( "hl2bl_art_equip" ); net.WriteUInt( i, 6 ); net.SendToServer() end
-
-		local d = vgui.Create( "DButton", row )
-		d:SetPos( 292, 70 ); d:SetSize( 150, 28 ); d:SetText( "Drop" ); d:SetTextColor( Color( 235, 120, 120 ) )
-		d.DoClick = function()
-			Derma_Query( "Drop " .. ( art.name or "this artifact" ) .. "?", "Drop", "Drop",
-				function() net.Start( "hl2bl_art_drop" ); net.WriteUInt( i, 6 ); net.SendToServer() end, "Cancel" )
-		end
-	end
-end
-
+-- Artifacts now live as a tab in the main inventory (cl_inventory). "Opening the
+-- artifact bag" focuses that tab.
 function HL2BL.OpenArtifacts()
-	if IsValid( HL2BL._ArtFrame ) then HL2BL._ArtFrame:Remove(); return end
-	local f = vgui.Create( "DFrame" )
-	f:SetSize( 470, math.min( 720, ScrH() * 0.8 ) ); f:Center(); f:MakePopup()
-	f:SetTitle( "HL2: Borderlands  -  Artifacts" )
-	HL2BL._ArtFrame = f
-	local scroll = vgui.Create( "DScrollPanel", f ); scroll:Dock( FILL )
-	HL2BL._ArtScroll = scroll
-	HL2BL.RebuildArtifacts()
+	if HL2BL.OpenInventoryArtifacts then HL2BL.OpenInventoryArtifacts()
+	elseif HL2BL.OpenInventory then HL2BL.OpenInventory() end
 end
 
 concommand.Add( "hl2bl_artifacts", HL2BL.OpenArtifacts, nil, "Open the artifact bag." )

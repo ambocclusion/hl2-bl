@@ -45,25 +45,72 @@ local function weaponSlotOf( i )
 end
 
 -- ---- left pane: equipment tiles --------------------------------------------
-local function slotTile( parent, label, item, onClick )
+surface.CreateFont( "HL2BL.InvTiny", { font = "Roboto", size = 13, weight = 500 } )
+
+local function fitText( text, font, maxw )
+	surface.SetFont( font )
+	if surface.GetTextSize( text ) <= maxw then return text end
+	while #text > 1 and surface.GetTextSize( text .. "..." ) > maxw do
+		text = string.sub( text, 1, #text - 1 )
+	end
+	return text .. "..."
+end
+
+-- Manufacturer (guns) / source faction (armor) display name, or nil.
+local function makerOf( item )
+	if item.kind == "armor" then
+		local src = HL2BL.ArmorSources and HL2BL.ArmorSources[ item.source ]
+		return src and src.name or nil
+	end
+	return HL2BL.ManufacturerName and HL2BL.ManufacturerName( item.manufacturer ) or nil
+end
+
+-- Item display name, rebuilt from parts when the rolled name is missing (e.g.
+-- vendor-bought guns), so a tile is never blank.
+local function displayName( item )
+	if item.name and item.name ~= "" then return item.name end
+	if item.kind == "armor" then return ARMOR_NAME[ item.slot ] or "Armor" end
+	local arch = ( HL2BL.GetArchetype and HL2BL.GetArchetype( item.archetype ).name ) or ( item.archetype or "Gun" )
+	local maker = makerOf( item )
+	return ( maker and ( maker .. " " ) or "" ) .. arch
+end
+
+-- An equipment slot tile: slot label, item name, and its manufacturer/source.
+-- opts = { name=, sub=, color=, onClick= }; a nil onClick = empty/inert tile.
+local function slotTile( parent, label, opts )
+	local has = opts.onClick ~= nil
 	local t = parent:Add( "DButton" )
-	t:Dock( TOP ); t:DockMargin( 8, 4, 8, 0 ); t:SetTall( 46 ); t:SetText( "" )
+	t:Dock( TOP ); t:DockMargin( 8, 4, 8, 0 ); t:SetTall( 54 ); t:SetText( "" )
 	t.Paint = function( _, w, h )
-		local rc = item and ( HL2BL.RarityColor[ item.rarity ] or color_white ) or Color( 80, 80, 90 )
-		draw.RoundedBox( 4, 0, 0, w, h, item and Color( rc.r, rc.g, rc.b, 40 ) or Color( 0, 0, 0, 120 ) )
-		surface.SetDrawColor( rc.r, rc.g, rc.b, item and 220 or 90 )
-		surface.DrawOutlinedRect( 0, 0, w, h, item and 2 or 1 )
-		draw.SimpleText( label, "HL2BL.Body", 10, 7, Color( 165, 165, 175 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
-		local name = item and ( ( item.name and item.name ~= "" ) and item.name or "Item" ) or "Empty"
-		draw.SimpleText( name, "HL2BL.Body", 10, h - 7, item and rc or Color( 120, 120, 128 ),
-			TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM )
-		if item then
-			draw.SimpleText( "unequip", "HL2BL.Body", w - 8, h * 0.5, Color( 150, 150, 158 ),
-				TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+		local col = opts.color or Color( 100, 100, 110 )
+		draw.RoundedBox( 4, 0, 0, w, h, has and Color( col.r, col.g, col.b, 40 ) or Color( 0, 0, 0, 120 ) )
+		surface.SetDrawColor( col.r, col.g, col.b, has and 220 or 90 )
+		surface.DrawOutlinedRect( 0, 0, w, h, has and 2 or 1 )
+
+		draw.SimpleText( label, "HL2BL.InvTiny", 10, 6, Color( 160, 160, 170 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
+		if has then
+			draw.SimpleText( "unequip", "HL2BL.InvTiny", w - 8, 6, Color( 140, 140, 150 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
+		end
+
+		draw.SimpleText( fitText( opts.name or "Empty", "HL2BL.Body", w - 20 ), "HL2BL.Body",
+			10, 22, has and col or Color( 120, 120, 128 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
+		if opts.sub and opts.sub ~= "" then
+			draw.SimpleText( fitText( opts.sub, "HL2BL.InvTiny", w - 20 ), "HL2BL.InvTiny",
+				10, h - 6, Color( 165, 165, 175 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM )
 		end
 	end
-	if onClick then t.DoClick = onClick else t:SetCursor( "arrow" ) end
+	if opts.onClick then t.DoClick = opts.onClick else t:SetCursor( "arrow" ) end
 	return t
+end
+
+local function tileOpts( item, onClick )
+	if not item then return { name = "Empty" } end
+	return {
+		name    = displayName( item ),
+		sub     = makerOf( item ),
+		color   = HL2BL.RarityColor[ item.rarity ] or color_white,
+		onClick = onClick,
+	}
 end
 
 local function buildEquipment( left )
@@ -76,7 +123,7 @@ local function buildEquipment( left )
 	for sl = 1, MAX_SLOTS do
 		local idx  = HL2BL.Inv.slots[ sl ] or 0
 		local item = idx ~= 0 and items[ idx ] or nil
-		slotTile( left, "Slot " .. sl, item, item and function() sendEquip( idx ) end or nil )
+		slotTile( left, "Slot " .. sl, tileOpts( item, item and function() sendEquip( idx ) end or nil ) )
 	end
 
 	local h2 = left:Add( "DLabel" )
@@ -85,8 +132,21 @@ local function buildEquipment( left )
 	for _, key in ipairs( ARMOR_SLOTS ) do
 		local idx  = ( HL2BL.Inv.armor or {} )[ key ] or 0
 		local item = idx ~= 0 and items[ idx ] or nil
-		slotTile( left, ARMOR_NAME[ key ] or key, item, item and function() sendEquip( idx ) end or nil )
+		slotTile( left, ARMOR_NAME[ key ] or key, tileOpts( item, item and function() sendEquip( idx ) end or nil ) )
 	end
+
+	local h3 = left:Add( "DLabel" )
+	h3:Dock( TOP ); h3:DockMargin( 8, 16, 8, 2 ); h3:SetFont( "HL2BL.Title" )
+	h3:SetText( "Artifact" ); h3:SetTextColor( color_white )
+	local arts = HL2BL.Arts or { slot = 0, items = {} }
+	local aidx = arts.slot or 0
+	local art  = aidx ~= 0 and ( arts.items or {} )[ aidx ] or nil
+	slotTile( left, "Relic", {
+		name    = art and ( art.name or "Artifact" ) or "Empty",
+		sub     = art and ( art.kind == "active" and "Active" or "Passive" ) or nil,
+		color   = art and ( HL2BL.RarityColor[ art.rarity ] or color_white ) or nil,
+		onClick = art and function() net.Start( "hl2bl_art_equip" ); net.WriteUInt( aidx, 6 ); net.SendToServer() end or nil,
+	} )
 end
 
 -- ---- right pane: category lists --------------------------------------------
@@ -130,10 +190,43 @@ local function buildList( scroll, kind )
 	end
 end
 
+-- Artifacts live in their own bag (HL2BL.Arts) with a single equip slot; reuse
+-- the artifact card + the artifact net messages rather than the weapon/armor path.
+local function buildArtifactList( scroll )
+	scroll:Clear()
+	local arts  = HL2BL.Arts or { slot = 0, items = {} }
+	local items = arts.items or {}
+	if #items == 0 then
+		local l = scroll:Add( "DLabel" ); l:Dock( TOP ); l:DockMargin( 8, 8, 0, 0 )
+		l:SetText( "No artifacts yet - kill enemies to find them." )
+		return
+	end
+	for i, art in ipairs( items ) do
+		local row = scroll:Add( "DPanel" )
+		row:Dock( TOP ); row:DockMargin( 4, 4, 4, 4 ); row:SetTall( 190 )
+		row.Paint = function() if HL2BL.DrawArtifactCard then HL2BL.DrawArtifactCard( 0, 0, art ) end end
+
+		local eq  = ( i == arts.slot )
+		local btn = vgui.Create( "DButton", row )
+		btn:SetPos( 292, 72 ); btn:SetSize( 150, 40 )
+		btn:SetText( eq and "Equipped\n(click to unequip)" or "Equip" )
+		btn.DoClick = function() net.Start( "hl2bl_art_equip" ); net.WriteUInt( i, 6 ); net.SendToServer() end
+
+		local drop = vgui.Create( "DButton", row )
+		drop:SetPos( 292, 120 ); drop:SetSize( 150, 30 )
+		drop:SetText( "Drop" ); drop:SetTextColor( Color( 235, 120, 120 ) )
+		drop.DoClick = function()
+			Derma_Query( "Drop " .. ( art.name or "this artifact" ) .. "?", "Drop", "Drop",
+				function() net.Start( "hl2bl_art_drop" ); net.WriteUInt( i, 6 ); net.SendToServer() end, "Cancel" )
+		end
+	end
+end
+
 function HL2BL.RebuildInventory()
-	if IsValid( HL2BL._InvLeft )    then buildEquipment( HL2BL._InvLeft ) end
-	if IsValid( HL2BL._InvWeapons ) then buildList( HL2BL._InvWeapons, "weapon" ) end
-	if IsValid( HL2BL._InvArmor )   then buildList( HL2BL._InvArmor, "armor" ) end
+	if IsValid( HL2BL._InvLeft )      then buildEquipment( HL2BL._InvLeft ) end
+	if IsValid( HL2BL._InvWeapons )   then buildList( HL2BL._InvWeapons, "weapon" ) end
+	if IsValid( HL2BL._InvArmor )     then buildList( HL2BL._InvArmor, "armor" ) end
+	if IsValid( HL2BL._InvArtifacts ) then buildArtifactList( HL2BL._InvArtifacts ) end
 end
 
 function HL2BL.OpenInventory()
@@ -152,6 +245,7 @@ function HL2BL.OpenInventory()
 
 	local sheet = vgui.Create( "DPropertySheet", fr )
 	sheet:Dock( FILL )
+	HL2BL._InvSheet = sheet
 
 	local wScroll = vgui.Create( "DScrollPanel", sheet )
 	sheet:AddSheet( "Weapons", wScroll, "icon16/gun.png" )
@@ -161,7 +255,19 @@ function HL2BL.OpenInventory()
 	sheet:AddSheet( "Armor", aScroll, "icon16/shield.png" )
 	HL2BL._InvArmor = aScroll
 
+	local artScroll = vgui.Create( "DScrollPanel", sheet )
+	HL2BL._InvArtTab = sheet:AddSheet( "Artifacts", artScroll, "icon16/wand.png" ).Tab
+	HL2BL._InvArtifacts = artScroll
+
 	HL2BL.RebuildInventory()
+end
+
+-- Open the inventory focused on the Artifacts tab (used by the O key / command).
+function HL2BL.OpenInventoryArtifacts()
+	if not IsValid( HL2BL._InvFrame ) then HL2BL.OpenInventory() end
+	if IsValid( HL2BL._InvSheet ) and IsValid( HL2BL._InvArtTab ) then
+		HL2BL._InvSheet:SetActiveTab( HL2BL._InvArtTab )
+	end
 end
 
 concommand.Add( "hl2bl_inv", HL2BL.OpenInventory, nil, "Open the HL2BL inventory." )
@@ -172,6 +278,11 @@ hook.Add( "PlayerButtonDown", "hl2bl_inv_key", function( ply, button )
 	if button ~= KEY_I then return end
 	if IsValid( vgui.GetKeyboardFocus() ) then return end   -- don't fire while typing
 	HL2BL.OpenInventory()
+end )
+
+-- Refresh the Artifacts tab when the artifact bag changes (it syncs separately).
+hook.Add( "HL2BL_ArtsUpdated", "hl2bl_inv_arts", function()
+	if IsValid( HL2BL._InvFrame ) then HL2BL.RebuildInventory() end
 end )
 
 hook.Add( "InitPostEntity", "hl2bl_inv_hint", function()
