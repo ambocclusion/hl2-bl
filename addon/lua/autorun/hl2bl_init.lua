@@ -21,6 +21,7 @@ HL2BL.Modules = {
 	{ "server", "hl2bl/sv_variants.lua" },
 	{ "server", "hl2bl/sv_spawner.lua" },
 	{ "server", "hl2bl/sv_loot_drops.lua" },
+	{ "server", "hl2bl/sv_boxloot.lua" },
 	{ "server", "hl2bl/sv_leveling.lua" },
 	{ "server", "hl2bl/sv_inventory.lua" },
 	{ "server", "hl2bl/sv_artifacts.lua" },

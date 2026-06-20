@@ -31,7 +31,14 @@ function HL2BL.EnemyLevel( playerLevel, isBoss )
 	return math.max( 1, playerLevel ) + ( isBoss and HL2BL.BossLevelOffset or HL2BL.EnemyLevelOffset )
 end
 
--- Enemy max-health multiplier for an enemy of the given level (+5% per level).
+-- Enemy max-health growth per level (tunable). Default +9%/level.
+if SERVER then
+	HL2BL.NPCHealthScale = HL2BL.NPCHealthScale
+		or CreateConVar( "hl2bl_npc_health_scale", "0.09", FCVAR_ARCHIVE, "Enemy max-health growth per level." )
+end
+
+-- Enemy max-health multiplier for an enemy of the given level.
 function HL2BL.EnemyHealthScale( level )
-	return 1 + ( math.max( 1, level ) - 1 ) * 0.05
+	local per = ( HL2BL.NPCHealthScale and HL2BL.NPCHealthScale:GetFloat() ) or 0.09
+	return 1 + ( math.max( 1, level ) - 1 ) * per
 end
