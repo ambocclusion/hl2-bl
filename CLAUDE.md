@@ -145,6 +145,10 @@ Modules in `addon/lua/hl2bl/`:
 
 ### Console commands / cvars
 - `hl2bl_inv` — open the backpack (suggest `bind i hl2bl_inv`).
+- `hl2bl_debug` — debug menu: **Reset my save** (own data, always allowed) + cheats
+  (credits, set level, spawn gun by rarity, spawn vendor, toggle spawning).
+- Pickup rule (sv_inventory `PlayerCanPickupWeapon`): only HL2BL loot (via +use) and
+  our slot weapons are pickable; vanilla NPC/map weapons are blocked.
 - `hl2bl_rolltest [itemLevel]` — print sample rolls.
 - `give hl2bl_smg` (or `_pistol/_shotgun/_rifle/_sniper`) — spawn a gun.
 - `hl2bl_drop_chance <0..1>` (0.4), `hl2bl_ammo_chance <0..1>` (0.35).
