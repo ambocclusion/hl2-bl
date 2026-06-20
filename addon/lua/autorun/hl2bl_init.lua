@@ -35,6 +35,7 @@ loadServer( "hl2bl/sv_inventory.lua" )
 loadServer( "hl2bl/sv_economy.lua" )
 loadServer( "hl2bl/sv_vendor.lua" )
 loadServer( "hl2bl/sv_campaign.lua" )
+loadServer( "hl2bl/sv_updatecheck.lua" )
 
 -- Client
 loadClient( "hl2bl/cl_statcard.lua" )
