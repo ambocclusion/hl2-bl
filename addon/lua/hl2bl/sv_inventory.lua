@@ -263,7 +263,7 @@ function HL2BL.StarterCrowbarStats()
 		archetype = "crowbar", manufacturer = "vanguard",
 		rarity = HL2BL.Rarity.COMMON, itemLevel = 1, element = HL2BL.Element.NONE,
 		damageMult = 1, fireRateMult = 1, spreadMult = 1, reloadMult = 1, magMult = 1,
-		elementChance = 0, elementDamage = 0,
+		recoilMult = 1, elementChance = 0, elementDamage = 0,
 	}
 end
 

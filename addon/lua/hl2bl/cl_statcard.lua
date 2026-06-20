@@ -29,6 +29,7 @@ local function statLines( s )
 		line( "Accuracy",     ( 1 - s.spreadMult   ) * 100 ),
 		line( "Reload Speed", ( 1 - s.reloadMult   ) * 100 ),
 		line( "Magazine",     ( s.magMult      - 1 ) * 100 ),
+		line( "Recoil",       ( 1 - ( s.recoilMult or 1 ) ) * 100 ),
 	}
 end
 
@@ -53,7 +54,9 @@ function HL2BL.DrawStatCard( x, y, s )
 	draw.SimpleText( title, "HL2BL.Title", x + pad, y + titleH / 2, rc, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
 
 	local cy = y + titleH + pad
-	draw.SimpleText( "Item Level " .. s.itemLevel, "HL2BL.Body", x + pad, cy, COL_DIM ); cy = cy + lineH
+	local maker = HL2BL.ManufacturerName and HL2BL.ManufacturerName( s.manufacturer ) or nil
+	draw.SimpleText( ( maker and ( maker .. "  -  " ) or "" ) .. "Item Level " .. s.itemLevel,
+		"HL2BL.Body", x + pad, cy, COL_DIM ); cy = cy + lineH
 
 	if hasEl then
 		local ec = string.format( "%s  -  %d%% on hit, %d dmg",

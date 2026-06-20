@@ -50,16 +50,19 @@ HL2BL.ElementName = {
 	[3] = "Corrosive", [4] = "Explosive", [5] = "Cryo",
 }
 
--- Manufacturers bias the rolled stats and flavor the name (spread/reload < 1 is
--- better, so a <1 bias improves them).
+-- Manufacturers bias the rolled stats and flavor the name (spread/reload/recoil
+-- < 1 is better, so a <1 bias improves them). Biases are deliberately STRONG so
+-- each maker is its own weapon class with real tradeoffs -- e.g. an Ironclad gun
+-- hits like a truck but kicks hard and fires slowly, a Volt sprays fast but
+-- inaccurately, a Precision is a laser with low recoil but a small mag.
 HL2BL.Manufacturers = {
-	vanguard   = { name = "Vanguard",   dmg = 1.00, rof = 1.00, spread = 1.00, mag = 1.00, reload = 1.00, elem = 1.00 },
-	ironclad   = { name = "Ironclad",   dmg = 1.25, rof = 0.80, spread = 0.90, mag = 0.90, reload = 1.00, elem = 1.00 },
-	volt       = { name = "Volt",       dmg = 0.90, rof = 1.30, spread = 1.15, mag = 1.10, reload = 1.00, elem = 1.00 },
-	precision  = { name = "Precision",  dmg = 1.05, rof = 0.95, spread = 0.70, mag = 0.90, reload = 1.00, elem = 1.00 },
-	surplus    = { name = "Surplus",    dmg = 0.95, rof = 1.05, spread = 1.15, mag = 1.60, reload = 1.10, elem = 1.00 },
-	elementech = { name = "Elementech", dmg = 0.95, rof = 1.00, spread = 0.95, mag = 1.00, reload = 1.00, elem = 1.50 },
-	rapidax    = { name = "Rapidax",    dmg = 1.00, rof = 1.05, spread = 1.00, mag = 0.95, reload = 0.65, elem = 1.00 },
+	vanguard   = { name = "Vanguard",   dmg = 1.00, rof = 1.00, spread = 1.00, mag = 1.00, reload = 1.00, recoil = 1.00, elem = 1.00 },
+	ironclad   = { name = "Ironclad",   dmg = 1.35, rof = 0.70, spread = 0.85, mag = 0.85, reload = 1.15, recoil = 1.35, elem = 0.90 },
+	volt       = { name = "Volt",       dmg = 0.80, rof = 1.45, spread = 1.25, mag = 1.25, reload = 1.00, recoil = 0.85, elem = 1.00 },
+	precision  = { name = "Precision",  dmg = 1.18, rof = 0.85, spread = 0.55, mag = 0.85, reload = 0.95, recoil = 0.65, elem = 1.00 },
+	surplus    = { name = "Surplus",    dmg = 0.85, rof = 1.10, spread = 1.30, mag = 1.85, reload = 1.20, recoil = 1.15, elem = 1.00 },
+	elementech = { name = "Elementech", dmg = 0.85, rof = 1.00, spread = 0.95, mag = 1.05, reload = 1.00, recoil = 0.95, elem = 1.85 },
+	rapidax    = { name = "Rapidax",    dmg = 0.95, rof = 1.12, spread = 0.95, mag = 0.90, reload = 0.55, recoil = 0.80, elem = 1.00 },
 }
 HL2BL.ManufacturerList = { "vanguard", "ironclad", "volt", "precision", "surplus", "elementech", "rapidax" }
 
@@ -79,6 +82,9 @@ local function RollRarity( itemLevel, luck )
 end
 
 local function frand( lo, hi ) return lo + math.random() * ( hi - lo ) end
+-- Symmetric roll noise, mean 0 (so documented per-rarity means stay clean while
+-- individual drops still vary). Width `w` widens the spread.
+local function vrand( w ) return ( math.random() * 2 - 1 ) * w end
 
 --- Roll a fresh stat table for a weapon at the given item level.
 -- Multipliers are 1.0 == base weapon value.
@@ -93,20 +99,25 @@ local function RollVendorRarity()
 end
 
 -- Build a full stat table for a known rarity + item level.
+-- Each quality multiplier is a per-rarity MEAN times symmetric noise whose width
+-- grows with rarity: higher rarity = stronger AND wider rolls, so two legendaries
+-- can feel quite different. Manufacturer biases then push each stat further into a
+-- distinct identity. (Level power is applied separately via LevelScale.)
 local function buildStats( rarity, itemLevel )
 	itemLevel = math.max( 1, itemLevel or 1 )
-	local rarityBonus = rarity * 0.15	-- 0.0 .. 0.6
+	local rarityBonus = rarity * 0.18	-- damage mean growth per tier (0 .. 0.72)
+	local var         = 0.10 + rarity * 0.05	-- roll spread widens with rarity
 
-	-- Quality multipliers (level power is applied separately via LevelScale).
 	local s = {
 		kind          = "weapon",
 		rarity        = rarity,
 		itemLevel     = itemLevel,
-		damageMult    = 1.0 + rarityBonus + frand( -0.08, 0.12 ),
-		fireRateMult  = 1.0 + frand( -0.10, 0.10 + rarityBonus * 0.3 ),
-		spreadMult    = 1.0 - frand( 0.0, 0.10 + rarityBonus * 0.4 ),
-		reloadMult    = 1.0 - frand( 0.0, 0.10 + rarityBonus * 0.3 ),
-		magMult       = 1.0 + frand( 0.0, rarityBonus ),
+		damageMult    = ( 1.0 + rarityBonus )   * ( 1 + vrand( var ) ),
+		fireRateMult  = ( 1.0 + rarity * 0.04 ) * ( 1 + vrand( var ) ),
+		spreadMult    = ( 1.0 - rarity * 0.06 ) * ( 1 + vrand( var * 0.8 ) ),
+		reloadMult    = ( 1.0 - rarity * 0.05 ) * ( 1 + vrand( var * 0.8 ) ),
+		magMult       = ( 1.0 + rarity * 0.10 ) * ( 1 + vrand( var ) ),
+		recoilMult    = ( 1.0 - rarity * 0.04 ) * ( 1 + vrand( var ) ),
 		element       = HL2BL.Element.NONE,
 		elementChance = 0.0,
 		elementDamage = 0.0,
@@ -120,15 +131,16 @@ local function buildStats( rarity, itemLevel )
 		s.elementDamage = ( 4.0 + itemLevel * 0.75 ) * ( 1.0 + rarityBonus )
 	end
 
-	-- Manufacturer biases (adds variety; flavors the name).
+	-- Manufacturer biases (strong identities; flavor the name).
 	local manuId = HL2BL.ManufacturerList[ math.random( #HL2BL.ManufacturerList ) ]
 	local m = HL2BL.Manufacturers[ manuId ]
 	s.manufacturer  = manuId
-	s.damageMult    = s.damageMult   * m.dmg
-	s.fireRateMult  = s.fireRateMult * m.rof
-	s.spreadMult    = math.Clamp( s.spreadMult * m.spread, 0.30, 1.60 )
-	s.reloadMult    = math.Clamp( s.reloadMult * m.reload, 0.40, 1.40 )
-	s.magMult       = s.magMult      * m.mag
+	s.damageMult    = math.max( 0.40, s.damageMult * m.dmg )
+	s.fireRateMult  = math.max( 0.40, s.fireRateMult * m.rof )
+	s.spreadMult    = math.Clamp( s.spreadMult * m.spread, 0.20, 1.90 )
+	s.reloadMult    = math.Clamp( s.reloadMult * m.reload, 0.35, 1.60 )
+	s.magMult       = math.max( 0.50, s.magMult   * m.mag )
+	s.recoilMult    = math.Clamp( s.recoilMult * m.recoil, 0.35, 1.90 )
 	if s.element ~= HL2BL.Element.NONE then
 		s.elementDamage = s.elementDamage * m.elem
 		s.elementChance = math.Clamp( s.elementChance * m.elem, 0, 0.95 )
@@ -170,6 +182,7 @@ function HL2BL.NetWriteStats( s )
 	net.WriteFloat( s.spreadMult or 1 )
 	net.WriteFloat( s.reloadMult or 1 )
 	net.WriteFloat( s.magMult or 1 )
+	net.WriteFloat( s.recoilMult or 1 )
 	net.WriteFloat( s.elementChance or 0 )
 	net.WriteFloat( s.elementDamage or 0 )
 end
@@ -187,6 +200,7 @@ function HL2BL.NetReadStats()
 	s.spreadMult    = net.ReadFloat()
 	s.reloadMult    = net.ReadFloat()
 	s.magMult       = net.ReadFloat()
+	s.recoilMult    = net.ReadFloat()
 	s.elementChance = net.ReadFloat()
 	s.elementDamage = net.ReadFloat()
 	return s
@@ -207,6 +221,7 @@ function HL2BL.GetEntStats( ent )
 		spreadMult    = ent:GetNWFloat( "hl2bl_spread", 1 ),
 		reloadMult    = ent:GetNWFloat( "hl2bl_reload", 1 ),
 		magMult       = ent:GetNWFloat( "hl2bl_mag", 1 ),
+		recoilMult    = ent:GetNWFloat( "hl2bl_recoil", 1 ),
 		elementChance = ent:GetNWFloat( "hl2bl_echance", 0 ),
 		elementDamage = ent:GetNWFloat( "hl2bl_edmg", 0 ),
 		name          = ent:GetNWString( "hl2bl_name", "" ),

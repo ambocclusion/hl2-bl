@@ -87,9 +87,22 @@ ConVars: `hl2bl_drop_chance`, `hl2bl_badass_chance`, `hl2bl_boss_every`,
 ## Weapon stats & scaling
 
 How guns roll and grow. All multiplier values below are the **mean roll** with a neutral
-**Vanguard** manufacturer — individual drops vary ±, and the other six manufacturers bias the
-stats further (e.g. Ironclad ×1.25 damage, Volt ×1.30 fire rate, Precision ×0.70 spread,
-Surplus ×1.60 magazine, Rapidax ×0.65 reload).
+**Vanguard** manufacturer. Individual drops vary around the mean, and that spread **widens with
+rarity** (a Legendary can roll great or merely good), so no two guns feel the same. The other
+six manufacturers then push the stats into distinct identities — each is effectively its own
+weapon class with real tradeoffs:
+
+| Manufacturer | Damage | Fire rate | Spread | Magazine | Reload | Recoil | Element | Identity |
+|---|---|---|---|---|---|---|---|---|
+| Vanguard | ×1.00 | ×1.00 | ×1.00 | ×1.00 | ×1.00 | ×1.00 | ×1.00 | balanced baseline |
+| Ironclad | ×1.35 | ×0.70 | ×0.85 | ×0.85 | ×1.15 | ×1.35 | ×0.90 | hard-hitting, slow, kicks hard |
+| Volt | ×0.80 | ×1.45 | ×1.25 | ×1.25 | ×1.00 | ×0.85 | ×1.00 | hyper fire-rate spray |
+| Precision | ×1.18 | ×0.85 | ×0.55 | ×0.85 | ×0.95 | ×0.65 | ×1.00 | laser-accurate, low recoil |
+| Surplus | ×0.85 | ×1.10 | ×1.30 | ×1.85 | ×1.20 | ×1.15 | ×1.00 | huge mags, sloppy |
+| Elementech | ×0.85 | ×1.00 | ×0.95 | ×1.05 | ×1.00 | ×0.95 | ×1.85 | elemental specialist |
+| Rapidax | ×0.95 | ×1.12 | ×0.95 | ×0.90 | ×0.55 | ×0.80 | ×1.00 | snappy reload + handling |
+
+(Spread / reload / recoil are **lower = better**, so a ×<1 bias improves them.)
 
 **Base stats per archetype** (before any roll):
 
@@ -101,16 +114,17 @@ Surplus ×1.60 magazine, Rapidax ×0.65 reload).
 | Rifle | 18 | 450 | 0.03 | 1 | 2.0 | 30 | 0.6 | 180 |
 | Sniper | 90 | 50 | 0.002 | 1 | 2.5 | 5 | 1.2 | 50 |
 
-**Rarity scaling** — the same stat multipliers apply to *every* weapon (spread & reload are
-lower = better):
+**Rarity scaling** — mean multipliers per tier (spread / reload / recoil are lower = better).
+Higher rarity also rolls **wider** (roll spread ≈ ±(10 + 5×rarity)%), so the values below are
+the average, not a guarantee:
 
-| Rarity | Dmg × | FireRate × | Spread × | Reload × | Mag × | Elem chance |
-|---|---|---|---|---|---|---|
-| Common | 1.02 | 1.00 | 0.95 | 0.95 | 1.00 | 10% |
-| Uncommon | 1.17 | 1.02 | 0.92 | 0.93 | 1.07 | 28% |
-| Rare | 1.32 | 1.04 | 0.89 | 0.91 | 1.15 | 46% |
-| Epic | 1.47 | 1.07 | 0.86 | 0.88 | 1.23 | 64% |
-| Legendary | 1.62 | 1.09 | 0.83 | 0.86 | 1.30 | 82% |
+| Rarity | Dmg × | FireRate × | Spread × | Reload × | Mag × | Recoil × | Elem chance |
+|---|---|---|---|---|---|---|---|
+| Common | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 10% |
+| Uncommon | 1.18 | 1.04 | 0.94 | 0.95 | 1.10 | 0.96 | 28% |
+| Rare | 1.36 | 1.08 | 0.88 | 0.90 | 1.20 | 0.92 | 46% |
+| Epic | 1.54 | 1.12 | 0.82 | 0.85 | 1.30 | 0.88 | 64% |
+| Legendary | 1.72 | 1.16 | 0.76 | 0.80 | 1.40 | 0.84 | 82% |
 
 **Level scaling** — character/item level multiplies **damage only** (fire rate, spread,
 magazine, etc. do not scale with level):
@@ -128,49 +142,49 @@ So `final damage = base × rarityDmg × levelScale`. The grids below show mean p
 **Pistol** (base 16)
 | Rarity \ Level | 1 | 10 | 20 | 30 | 40 | 50 | 60 |
 |---|---|---|---|---|---|---|---|
-| Common | 16 | 30 | 44 | 59 | 74 | 88 | 103 |
-| Uncommon | 19 | 34 | 51 | 68 | 84 | 101 | 118 |
-| Rare | 21 | 38 | 57 | 76 | 95 | 114 | 133 |
-| Epic | 24 | 43 | 64 | 85 | 106 | 127 | 148 |
-| Legendary | 26 | 47 | 70 | 94 | 117 | 140 | 164 |
+| Common | 16 | 29 | 43 | 58 | 72 | 87 | 101 |
+| Uncommon | 19 | 34 | 51 | 68 | 85 | 102 | 119 |
+| Rare | 22 | 39 | 59 | 79 | 98 | 118 | 137 |
+| Epic | 25 | 45 | 67 | 89 | 111 | 133 | 155 |
+| Legendary | 28 | 50 | 75 | 99 | 124 | 149 | 174 |
 
 **SMG** (base 11)
 | Rarity \ Level | 1 | 10 | 20 | 30 | 40 | 50 | 60 |
 |---|---|---|---|---|---|---|---|
-| Common | 11 | 20 | 30 | 41 | 51 | 61 | 71 |
-| Uncommon | 13 | 23 | 35 | 46 | 58 | 70 | 81 |
-| Rare | 15 | 26 | 39 | 52 | 65 | 79 | 92 |
-| Epic | 16 | 29 | 44 | 58 | 73 | 87 | 102 |
-| Legendary | 18 | 32 | 48 | 64 | 80 | 96 | 112 |
+| Common | 11 | 20 | 30 | 40 | 50 | 60 | 69 |
+| Uncommon | 13 | 23 | 35 | 47 | 59 | 70 | 82 |
+| Rare | 15 | 27 | 41 | 54 | 67 | 81 | 94 |
+| Epic | 17 | 31 | 46 | 61 | 76 | 92 | 107 |
+| Legendary | 19 | 34 | 51 | 68 | 85 | 102 | 119 |
 
 **Shotgun** (base 8 — per pellet, ×8 pellets per shot)
 | Rarity \ Level | 1 | 10 | 20 | 30 | 40 | 50 | 60 |
 |---|---|---|---|---|---|---|---|
-| Common | 8 | 15 | 22 | 29 | 37 | 44 | 51 |
-| Uncommon | 9 | 17 | 25 | 34 | 42 | 51 | 59 |
-| Rare | 11 | 19 | 29 | 38 | 48 | 57 | 67 |
-| Epic | 12 | 21 | 32 | 42 | 53 | 64 | 74 |
-| Legendary | 13 | 23 | 35 | 47 | 58 | 70 | 82 |
+| Common | 8 | 14 | 22 | 29 | 36 | 43 | 50 |
+| Uncommon | 9 | 17 | 26 | 34 | 43 | 51 | 60 |
+| Rare | 11 | 20 | 29 | 39 | 49 | 59 | 69 |
+| Epic | 12 | 22 | 33 | 44 | 56 | 67 | 78 |
+| Legendary | 14 | 25 | 37 | 50 | 62 | 74 | 87 |
 
-*(Full hit on one target ≈ these × 8, e.g. Legendary L60 ≈ 656.)*
+*(Full hit on one target ≈ these × 8, e.g. Legendary L60 ≈ 696.)*
 
 **Rifle** (base 18)
 | Rarity \ Level | 1 | 10 | 20 | 30 | 40 | 50 | 60 |
 |---|---|---|---|---|---|---|---|
-| Common | 18 | 33 | 50 | 66 | 83 | 99 | 116 |
-| Uncommon | 21 | 38 | 57 | 76 | 95 | 114 | 133 |
-| Rare | 24 | 43 | 64 | 86 | 107 | 129 | 150 |
-| Epic | 26 | 48 | 72 | 96 | 119 | 143 | 167 |
-| Legendary | 29 | 53 | 79 | 105 | 132 | 158 | 184 |
+| Common | 18 | 33 | 49 | 65 | 81 | 97 | 114 |
+| Uncommon | 21 | 38 | 58 | 77 | 96 | 115 | 134 |
+| Rare | 24 | 44 | 66 | 88 | 110 | 132 | 154 |
+| Epic | 28 | 50 | 75 | 100 | 125 | 150 | 175 |
+| Legendary | 31 | 56 | 84 | 112 | 140 | 167 | 195 |
 
 **Sniper** (base 90)
 | Rarity \ Level | 1 | 10 | 20 | 30 | 40 | 50 | 60 |
 |---|---|---|---|---|---|---|---|
-| Common | 92 | 166 | 249 | 331 | 414 | 497 | 579 |
-| Uncommon | 105 | 191 | 285 | 380 | 475 | 570 | 664 |
-| Rare | 119 | 215 | 322 | 429 | 536 | 643 | 750 |
-| Epic | 132 | 239 | 359 | 478 | 597 | 716 | 835 |
-| Legendary | 146 | 264 | 395 | 526 | 658 | 789 | 920 |
+| Common | 90 | 163 | 244 | 325 | 406 | 487 | 568 |
+| Uncommon | 106 | 192 | 288 | 383 | 479 | 575 | 670 |
+| Rare | 122 | 222 | 332 | 442 | 552 | 662 | 772 |
+| Epic | 139 | 251 | 376 | 500 | 625 | 750 | 875 |
+| Legendary | 155 | 280 | 420 | 559 | 698 | 837 | 977 |
 
 </details>
 
@@ -179,11 +193,11 @@ So `final damage = base × rarityDmg × levelScale`. The grids below show mean p
 
 | Rarity | L1 | L10 | L20 | L30 | L40 | L50 | L60 |
 |---|---|---|---|---|---|---|---|
-| Common | 5 | 12 | 19 | 26 | 34 | 42 | 49 |
-| Uncommon | 5 | 13 | 22 | 30 | 39 | 48 | 56 |
-| Rare | 6 | 15 | 25 | 34 | 44 | 54 | 64 |
-| Epic | 7 | 17 | 28 | 38 | 49 | 60 | 71 |
-| Legendary | 8 | 18 | 30 | 42 | 54 | 66 | 78 |
+| Common | 5 | 12 | 19 | 27 | 34 | 42 | 49 |
+| Uncommon | 6 | 14 | 22 | 31 | 40 | 49 | 58 |
+| Rare | 6 | 16 | 26 | 36 | 46 | 56 | 67 |
+| Epic | 7 | 18 | 29 | 41 | 52 | 64 | 75 |
+| Legendary | 8 | 20 | 33 | 46 | 58 | 71 | 84 |
 
 ## Development
 

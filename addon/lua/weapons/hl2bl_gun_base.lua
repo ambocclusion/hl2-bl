@@ -38,6 +38,7 @@ function SWEP:GetFireRateMult()  return self:GetNWFloat( "hl2bl_rof", 1 ) end
 function SWEP:GetSpreadMult()    return self:GetNWFloat( "hl2bl_spread", 1 ) end
 function SWEP:GetReloadMult()    return self:GetNWFloat( "hl2bl_reload", 1 ) end
 function SWEP:GetMagMult()       return self:GetNWFloat( "hl2bl_mag", 1 ) end
+function SWEP:GetRecoilMult()    return self:GetNWFloat( "hl2bl_recoil", 1 ) end
 function SWEP:GetElementChance() return self:GetNWFloat( "hl2bl_echance", 0 ) end
 function SWEP:GetElementDamage() return self:GetNWFloat( "hl2bl_edmg", 0 ) end
 function SWEP:GetReserve()       return self:GetNWInt(   "hl2bl_reserve", 0 ) end
@@ -63,6 +64,7 @@ function SWEP:ApplyStats( s )
 	self:SetNWFloat( "hl2bl_spread",  s.spreadMult )
 	self:SetNWFloat( "hl2bl_reload",  s.reloadMult )
 	self:SetNWFloat( "hl2bl_mag",     s.magMult )
+	self:SetNWFloat( "hl2bl_recoil",  s.recoilMult or 1 )
 	self:SetNWFloat( "hl2bl_echance", s.elementChance )
 	self:SetNWFloat( "hl2bl_edmg",    s.elementDamage )
 	self:SetNWBool(  "hl2bl_rolled",  true )
@@ -198,7 +200,8 @@ function SWEP:PrimaryAttack()
 	self:SendWeaponAnim( ACT_VM_PRIMARYATTACK )
 	owner:MuzzleFlash()
 	owner:SetAnimation( PLAYER_ATTACK1 )
-	owner:ViewPunch( Angle( -math.Rand( a.recoil * 0.5, a.recoil ), math.Rand( -a.recoil * 0.25, a.recoil * 0.25 ), 0 ) )
+	local rc = a.recoil * self:GetRecoilMult()
+	owner:ViewPunch( Angle( -math.Rand( rc * 0.5, rc ), math.Rand( -rc * 0.25, rc * 0.25 ), 0 ) )
 
 	local spread = a.spread * self:GetSpreadMult() * ( self.HL2BL_Zoomed and 0.4 or 1 )
 	local wep = self
@@ -237,7 +240,7 @@ function SWEP:MeleeAttack( a )
 	self:EmitSound( a.sound )
 	self:SendWeaponAnim( tr.Hit and ACT_VM_HITCENTER or ACT_VM_MISSCENTER )
 	owner:SetAnimation( PLAYER_ATTACK1 )
-	owner:ViewPunch( Angle( -a.recoil, 0, 0 ) )
+	owner:ViewPunch( Angle( -a.recoil * self:GetRecoilMult(), 0, 0 ) )
 
 	if not tr.Hit or CLIENT then return end
 
