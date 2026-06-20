@@ -13,12 +13,12 @@ HL2BL.Difficulty = HL2BL.Difficulty or 1.0
 
 local cEnabled  = CreateConVar( "hl2bl_spawn_enabled",      "1",    FCVAR_ARCHIVE, "Enable the encounter director." )
 local cTick     = CreateConVar( "hl2bl_director_tick",      "3",    FCVAR_ARCHIVE, "Director think interval (seconds)." )
-local cBase     = CreateConVar( "hl2bl_encounter_base",     "9",    FCVAR_ARCHIVE, "Base enemies per encounter (before scaling)." )
-local cMaxBudget= CreateConVar( "hl2bl_encounter_max",      "36",   FCVAR_ARCHIVE, "Hard cap on enemies per encounter." )
-local cCooldown = CreateConVar( "hl2bl_encounter_cooldown", "15",   FCVAR_ARCHIVE, "Seconds after a clear before the next encounter." )
-local cTravel   = CreateConVar( "hl2bl_encounter_travel",   "1000", FCVAR_ARCHIVE, "Distance the group must move to start a new encounter." )
-local cWave     = CreateConVar( "hl2bl_spawn_wave",         "4",    FCVAR_ARCHIVE, "Enemies spawned per director tick." )
-local cConc     = CreateConVar( "hl2bl_spawn_max",          "14",   FCVAR_ARCHIVE, "Base concurrent alive cap during an encounter." )
+local cBase     = CreateConVar( "hl2bl_encounter_base",     "14",   FCVAR_ARCHIVE, "Base enemies per encounter (before scaling)." )
+local cMaxBudget= CreateConVar( "hl2bl_encounter_max",      "50",   FCVAR_ARCHIVE, "Hard cap on enemies per encounter." )
+local cCooldown = CreateConVar( "hl2bl_encounter_cooldown", "10",   FCVAR_ARCHIVE, "Seconds after a clear before the next encounter." )
+local cTravel   = CreateConVar( "hl2bl_encounter_travel",   "850",  FCVAR_ARCHIVE, "Distance the group must move to start a new encounter." )
+local cWave     = CreateConVar( "hl2bl_spawn_wave",         "6",    FCVAR_ARCHIVE, "Enemies spawned per director tick." )
+local cConc     = CreateConVar( "hl2bl_spawn_max",          "20",   FCVAR_ARCHIVE, "Base concurrent alive cap during an encounter." )
 local cBossEvery= CreateConVar( "hl2bl_boss_every",         "4",    FCVAR_ARCHIVE, "Boss encounter every N encounters (0 = never)." )
 
 local POOL = {
