@@ -39,6 +39,7 @@ HL2BL.Modules = {
 	{ "client", "hl2bl/cl_ammo_hud.lua" },
 	{ "client", "hl2bl/cl_slotbar.lua" },
 	{ "client", "hl2bl/cl_variant_tag.lua" },
+	{ "client", "hl2bl/cl_playernames.lua" },
 	{ "client", "hl2bl/cl_health_bars.lua" },
 	{ "client", "hl2bl/cl_boss_hud.lua" },
 	{ "client", "hl2bl/cl_vendor.lua" },
