@@ -15,6 +15,7 @@ HL2BL.Modules = {
 	{ "shared", "hl2bl/sh_progression.lua" },
 	{ "shared", "hl2bl/sh_enemies.lua" },
 	{ "shared", "hl2bl/sh_loot.lua" },
+	{ "shared", "hl2bl/sh_armor.lua" },
 	{ "shared", "hl2bl/sh_artifacts.lua" },
 	-- Server
 	{ "server", "hl2bl/sv_variants.lua" },
@@ -23,6 +24,7 @@ HL2BL.Modules = {
 	{ "server", "hl2bl/sv_leveling.lua" },
 	{ "server", "hl2bl/sv_inventory.lua" },
 	{ "server", "hl2bl/sv_artifacts.lua" },
+	{ "server", "hl2bl/sv_armor.lua" },
 	{ "server", "hl2bl/sv_economy.lua" },
 	{ "server", "hl2bl/sv_vendor.lua" },
 	{ "server", "hl2bl/sv_campaign.lua" },

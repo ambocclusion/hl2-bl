@@ -55,13 +55,21 @@ function HL2BL.RecomputePassive( ply )
 	end
 	ply.HL2BL_Passive = agg
 
-	local base = 100 + ( ply:GetNWInt( "hl2bl_level", 1 ) - 1 ) * 10
-	ply:SetMaxHealth( base + agg.maxhp )
+	-- Armor (HEV suit) folds in here too, so level + artifacts + armor stack in
+	-- one place. ply.HL2BL_ArmorAgg is maintained by sv_armor.RecomputeArmor.
+	local armor = ply.HL2BL_ArmorAgg
+	local base  = 100 + ( ply:GetNWInt( "hl2bl_level", 1 ) - 1 ) * 10
+	ply:SetMaxHealth( base + agg.maxhp + ( armor and armor.maxhp or 0 ) )
 	if ply:Alive() and ply:Health() > ply:GetMaxHealth() then ply:SetHealth( ply:GetMaxHealth() ) end
 
 	local mul = 1 + agg.speedPct / 100
 	ply:SetWalkSpeed( math.Round( 200 * mul ) )
 	ply:SetRunSpeed( math.Round( 400 * mul ) )
+
+	-- Blue suit-bar max from armor pieces. Never refill here (anti-abuse: the bar
+	-- fills only on spawn, in sv_armor); just clamp current down if the max shrank.
+	ply:SetMaxArmor( armor and armor.maxarmor or 0 )
+	if ply:Armor() > ply:GetMaxArmor() then ply:SetArmor( ply:GetMaxArmor() ) end
 end
 
 -- ---- equip / unequip / drop ------------------------------------------------
@@ -213,9 +221,11 @@ end )
 
 timer.Create( "hl2bl_artifact_regen", 1, 0, function()
 	for _, ply in ipairs( player.GetAll() ) do
-		local p = ply.HL2BL_Passive
-		if ply:Alive() and p and p.regen and p.regen > 0 then
-			ply:SetHealth( math.min( ply:GetMaxHealth(), ply:Health() + p.regen ) )
+		local p     = ply.HL2BL_Passive
+		local arm   = ply.HL2BL_ArmorAgg
+		local regen = ( p and p.regen or 0 ) + ( arm and arm.regen or 0 )   -- artifact + armor
+		if ply:Alive() and regen > 0 then
+			ply:SetHealth( math.min( ply:GetMaxHealth(), ply:Health() + regen ) )
 		end
 	end
 end )

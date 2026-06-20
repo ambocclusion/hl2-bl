@@ -68,22 +68,62 @@ function HL2BL.DrawStatCard( x, y, s )
 	return h
 end
 
--- Look-at card on the HUD.
+--- Draw an armor card (same look as the gun card) with top-left at (x, y).
+-- Returns its height. Reused by the inventory paper-doll + category list.
+function HL2BL.DrawArmorCard( x, y, a )
+	local rc    = HL2BL.RarityColor[ a.rarity or 0 ] or color_white
+	local title = ( a.name and a.name ~= "" ) and a.name or ( HL2BL.RarityName[ a.rarity or 0 ] .. " Armor" )
+	local lines = HL2BL.ArmorDescLines( a )
+
+	local pad, titleH, lineH = 12, 32, 22
+	local rows = #lines + 1                                     -- + slot/level row
+	local h = titleH + pad + rows * lineH + pad
+
+	draw.RoundedBox( 6, x, y, CARD_W, h, COL_BG )
+	draw.RoundedBoxEx( 6, x, y, CARD_W, titleH, Color( rc.r, rc.g, rc.b, 60 ), true, true, false, false )
+	surface.SetDrawColor( rc.r, rc.g, rc.b, 220 )
+	surface.DrawOutlinedRect( x, y, CARD_W, h, 2 )
+
+	draw.SimpleText( title, "HL2BL.Title", x + pad, y + titleH / 2, rc, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+
+	local cy = y + titleH + pad
+	local slotName = ( HL2BL.ArmorSlotName and HL2BL.ArmorSlotName[ a.slot ] ) or "Armor"
+	draw.SimpleText( slotName .. "  -  Item Level " .. ( a.itemLevel or 1 ), "HL2BL.Body", x + pad, cy, COL_DIM ); cy = cy + lineH
+
+	for _, l in ipairs( lines ) do
+		draw.SimpleText( l, "HL2BL.Body", x + pad, cy, COL_GOOD ); cy = cy + lineH
+	end
+
+	return h
+end
+
+-- Look-at card on the HUD (gun loot, or armor world pickups).
 hook.Add( "HUDPaint", "hl2bl_statcard", function()
 	local ply = LocalPlayer()
 	if not IsValid( ply ) or not ply:Alive() then return end
 
 	local ent = ply:GetEyeTrace().Entity
-	if not IsValid( ent ) or not ent:IsWeapon() then return end
+	if not IsValid( ent ) then return end
 	if ent:GetPos():DistToSqr( ply:EyePos() ) > 200 * 200 then return end
 
+	local x, y = ScrW() * 0.56, ScrH() * 0.30
+
+	-- Armor world pickup: stats are carried as JSON on the entity.
+	if ent:GetClass() == "hl2bl_armor" then
+		local a = util.JSONToTable( ent:GetNWString( "hl2bl_armorjson", "" ) or "" )
+		if not a then return end
+		local h = HL2BL.DrawArmorCard( x, y, a )
+		draw.SimpleText( "[E] Pick up", "HL2BL.Title", x + CARD_W * 0.5, y + h + 8,
+			Color( 120, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
+		return
+	end
+
+	-- Weapon (held or world loot).
+	if not ent:IsWeapon() then return end
 	local s = HL2BL.GetEntStats( ent )
 	if not s then return end
 
-	local x, y = ScrW() * 0.56, ScrH() * 0.30
 	local h = HL2BL.DrawStatCard( x, y, s )
-
-	-- "[E] Pick up" prompt for loose loot (weapons lying in the world).
 	if not IsValid( ent:GetOwner() ) then
 		draw.SimpleText( "[E] Pick up", "HL2BL.Title", x + CARD_W * 0.5, y + h + 8,
 			Color( 120, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )

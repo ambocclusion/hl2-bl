@@ -99,6 +99,7 @@ local function buildStats( rarity, itemLevel )
 
 	-- Quality multipliers (level power is applied separately via LevelScale).
 	local s = {
+		kind          = "weapon",
 		rarity        = rarity,
 		itemLevel     = itemLevel,
 		damageMult    = 1.0 + rarityBonus + frand( -0.08, 0.12 ),

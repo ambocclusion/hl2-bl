@@ -8,6 +8,8 @@ HL2BL.DropChance = CreateConVar( "hl2bl_drop_chance", "0.4", FCVAR_ARCHIVE,
 	"Base chance (0-1) an NPC drops a gun on death." )
 HL2BL.AmmoChance = CreateConVar( "hl2bl_ammo_chance", "0.35", FCVAR_ARCHIVE,
 	"Chance an NPC that didn't drop a gun tops up the killer's ammo." )
+HL2BL.ArmorChance = CreateConVar( "hl2bl_armor_chance", "0.12", FCVAR_ARCHIVE,
+	"Chance an NPC also drops an armor piece (boss/elite boosted)." )
 
 -- Sound played at the drop, by rarity (louder/grander for higher tiers).
 local RARITY_SOUND = {
@@ -66,6 +68,14 @@ hook.Add( "OnNPCKilled", "hl2bl_loot_drops", function( npc, attacker, inflictor 
 			* ( boss and 4 or elite and 2 or 1 )
 		if npc.HL2BL_IsBoss or math.random() <= artChance then
 			HL2BL.SpawnArtifact( npc:WorldSpaceCenter() + Vector( 0, 0, 12 ), HL2BL.RollArtifact( itemLevel, luck ) )
+		end
+	end
+
+	-- Independent armor drop chance (boss/elite boosted).
+	if HL2BL.SpawnArmor and HL2BL.RollArmorStats then
+		local armChance = HL2BL.ArmorChance:GetFloat() * ( boss and 4 or elite and 2 or 1 )
+		if npc.HL2BL_IsBoss or math.random() <= armChance then
+			HL2BL.SpawnArmor( npc:WorldSpaceCenter() + Vector( 0, 0, 14 ), HL2BL.RollArmorStats( itemLevel, luck ) )
 		end
 	end
 

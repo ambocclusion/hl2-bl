@@ -13,16 +13,19 @@ util.AddNetworkString( "hl2bl_inv_drop" )    -- drop a backpack gun into the wor
 local MAX_INV   = 32
 local MAX_SLOTS = HL2BL.MAX_SLOTS
 
-local function inv( ply )   ply.HL2BL_Inv   = ply.HL2BL_Inv   or {}; return ply.HL2BL_Inv end
-local function slots( ply ) ply.HL2BL_Slots = ply.HL2BL_Slots or {}; return ply.HL2BL_Slots end
+local function inv( ply )      ply.HL2BL_Inv   = ply.HL2BL_Inv   or {}; return ply.HL2BL_Inv end
+local function slots( ply )    ply.HL2BL_Slots = ply.HL2BL_Slots or {}; return ply.HL2BL_Slots end
+local function armorMap( ply ) ply.HL2BL_Armor = ply.HL2BL_Armor or {}; return ply.HL2BL_Armor end
 
 -- ---- persistence -----------------------------------------------------------
 local function saveInv( ply )
 	if not IsValid( ply ) then return end
-	local sl = slots( ply )
+	local sl, ar = slots( ply ), armorMap( ply )
 	local arr = {}
 	for i = 1, MAX_SLOTS do arr[i] = sl[i] or 0 end
-	ply:SetPData( "hl2bl_inv", util.TableToJSON( { items = inv( ply ), slots = arr } ) )
+	local armap = {}
+	for _, key in ipairs( HL2BL.ARMOR_SLOTS ) do armap[ key ] = ar[ key ] or 0 end
+	ply:SetPData( "hl2bl_inv", util.TableToJSON( { items = inv( ply ), slots = arr, armor = armap } ) )
 end
 
 local function loadInv( ply )
@@ -37,15 +40,25 @@ local function loadInv( ply )
 			if idx and idx ~= 0 then ply.HL2BL_Slots[i] = idx end
 		end
 	end
+	ply.HL2BL_Armor = {}
+	if t.armor then
+		for _, key in ipairs( HL2BL.ARMOR_SLOTS ) do
+			local idx = t.armor[ key ]
+			if idx and idx ~= 0 then ply.HL2BL_Armor[ key ] = idx end
+		end
+	end
 end
 
 -- ---- sync ------------------------------------------------------------------
+-- Writes the 4 weapon slots, then the 4 armor slots (HL2BL.ARMOR_SLOTS order),
+-- then the mixed backpack (each item kind-tagged via NetWriteItem).
 local function syncInventory( ply )
-	local items, sl = inv( ply ), slots( ply )
+	local items, sl, ar = inv( ply ), slots( ply ), armorMap( ply )
 	net.Start( "hl2bl_inv_sync" )
 		for i = 1, MAX_SLOTS do net.WriteUInt( sl[i] or 0, 6 ) end
+		for _, key in ipairs( HL2BL.ARMOR_SLOTS ) do net.WriteUInt( ar[ key ] or 0, 6 ) end
 		net.WriteUInt( #items, 6 )
-		for _, s in ipairs( items ) do HL2BL.NetWriteStats( s ) end
+		for _, s in ipairs( items ) do HL2BL.NetWriteItem( s ) end
 	net.Send( ply )
 end
 HL2BL.SyncInventory = syncInventory
@@ -77,6 +90,9 @@ function HL2BL.InventoryRemove( ply, index )
 		local class = "hl2bl_slot" .. stripSlot
 		if IsValid( ply:GetWeapon( class ) ) then ply:StripWeapon( class ) end
 	end
+
+	-- Keep armor slot indices valid too (decrement/clear), then re-apply effects.
+	if HL2BL.ArmorSlotFixup then HL2BL.ArmorSlotFixup( ply, index ) end
 
 	saveInv( ply ); syncInventory( ply )
 	return removed
@@ -140,6 +156,7 @@ local function pickupLoot( ply, wep )
 	if not s then return end
 	if #items >= MAX_INV then ply:ChatPrint( "[HL2BL] Backpack full." ); return end
 
+	s.kind = "weapon"
 	items[ #items + 1 ] = s
 	ply:EmitSound( "items/ammo_pickup.wav" )
 	ply:ChatPrint( "[HL2BL] Looted: " .. ( s.name ~= "" and s.name or "a gun" ) )
@@ -178,20 +195,39 @@ hook.Add( "PlayerUse", "hl2bl_loot_use", function( ply, ent )
 	end
 end )
 
+-- Equip toggle: armor routes to the armor system (its own slot), weapons to the
+-- 4 weapon slots. The same message drives the left paper-doll's click-to-unequip.
 net.Receive( "hl2bl_inv_equip", function( _, ply )
-	toggleEquip( ply, net.ReadUInt( 6 ) )
+	local idx  = net.ReadUInt( 6 )
+	local item = inv( ply )[ idx ]
+	if item and item.kind == "armor" then
+		if HL2BL.EquipArmor then HL2BL.EquipArmor( ply, idx ) end
+	else
+		toggleEquip( ply, idx )
+	end
 end )
 
--- Drop a backpack gun in front of the player as world loot.
+-- Drop a backpack item in front of the player as world loot (armor -> armor
+-- pickup ent; weapon -> its SWEP).
 net.Receive( "hl2bl_inv_drop", function( _, ply )
 	local removed = HL2BL.InventoryRemove( ply, net.ReadUInt( 6 ) )
 	if not removed then return end
 
+	local fwd = ply:GetAimVector()
+	local pos = ply:GetShootPos() + fwd * 40
+
+	if removed.kind == "armor" then
+		local e = HL2BL.SpawnArmor and HL2BL.SpawnArmor( pos, removed )
+		if IsValid( e ) then
+			local phys = e:GetPhysicsObject()
+			if IsValid( phys ) then phys:SetVelocity( fwd * 150 + Vector( 0, 0, 80 ) ) end
+		end
+		return
+	end
+
 	local w = ents.Create( "hl2bl_" .. ( removed.archetype or "smg" ) )
 	if not IsValid( w ) then return end
-
-	local fwd = ply:GetAimVector()
-	w:SetPos( ply:GetShootPos() + fwd * 40 )
+	w:SetPos( pos )
 	w:SetAngles( AngleRand() )
 	w.HL2BL_IsLoot = true
 	w:Spawn()

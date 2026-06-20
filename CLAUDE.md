@@ -132,10 +132,19 @@ Modules in `addon/lua/hl2bl/`:
   variant nameplates.
 - `sv_loot_drops.lua` — NPC death rolls a gun drop (elite/boss by max-health +
   variant luck/forced-drop) or an ammo top-up; rarity-scaled drop fanfare.
-- `sv_inventory.lua` — per-player backpack + up to 4 equipped slots (capped);
-  loot is picked up on **+use** (PlayerUse), not automatically; equip assigns an
-  item to a free slot (toggle to unequip), re-equips on spawn; backpack + slots
-  PData-persisted across maps. `InventoryAdd/Remove` helpers (slot-index fixup).
+- `sv_inventory.lua` — per-player backpack of **mixed items** (each `kind`-tagged
+  "weapon"/"armor") + up to 4 equipped weapon slots and 4 HEV armor slots; loot is
+  picked up on **+use**; `hl2bl_inv_equip` routes armor to `EquipArmor`, weapons to
+  the slot system; backpack + both slot maps PData-persisted. Sync writes weapon
+  slots + armor slots + items via `HL2BL.NetWriteItem` (kind dispatch).
+- `sh_armor.lua` + `sv_armor.lua` + `entities/hl2bl_armor.lua` — **HEV armor** loot.
+  4 slots (Helmet/Vest/Greaves/Power Core); pieces roll a variety of `maxArmor`
+  (blue suit bar), `maxHealth`, `regen` (HP/s, scales off level), biased by slot +
+  HL2-faction source (Black Mesa / Combine / Civil Protection / Resistance / Synth).
+  Effects fold into `HL2BL.RecomputePassive` (the single max-hp/armor/regen
+  authority in sv_artifacts) so level + artifacts + armor stack. The blue bar
+  refills **only on spawn** (anti-abuse: equipping never tops it up). World pickup
+  is the suit-battery model, +use → `GiveArmor`.
 - `sv_leveling.lua` — kills grant XP (NPC-hp scaled), level raises max health,
   PData-persisted; loot rolls at the killer's level.
 - `sv_economy.lua` — credits currency (kills/sell earn, buy spends), persisted.
@@ -144,20 +153,25 @@ Modules in `addon/lua/hl2bl/`:
   are rare to buy) / Sell backpack guns. `RollVendorStats`, `GunPrice/GunSellPrice`
   in sh_loot. Spawn via spawn menu or `hl2bl_spawn_vendor` (superadmin).
 - `sv_campaign.lua` — HL2 campaign map order + start/next commands + auto-advance.
-- `cl_statcard.lua` — look-at stat card + reusable `HL2BL.DrawStatCard`.
-- `cl_inventory.lua` — Derma backpack (`hl2bl_inv`) of stat cards + Equip.
+- `cl_statcard.lua` — look-at card + reusable `HL2BL.DrawStatCard` / `DrawArmorCard`.
+- `cl_inventory.lua` — two-pane inventory (`hl2bl_inv`): left equipment paper-doll
+  (4 weapon + 4 armor slot tiles, click to unequip), right category tabs
+  (Weapons / Armor) of stat cards with Equip / Drop.
 - `cl_leveling_hud.lua` — level/XP bar. `cl_ammo_hud.lua` — clip/reserve + gun name.
   `cl_loot_beam.lua` — rarity loot beams.
 
 ### Console commands / cvars
-- `hl2bl_inv` — open the backpack (suggest `bind i hl2bl_inv`).
+- `hl2bl_inv` — open the inventory (weapons + armor; suggest `bind i hl2bl_inv`).
+- `hl2bl_give_armor [helmet|vest|greaves|core] [level]` — spawn a rolled armor piece
+  into your backpack (superadmin; random slot if omitted).
 - `hl2bl_debug` — debug menu: **Reset my save** (own data, always allowed) + cheats
   (credits, set level, spawn gun by rarity, spawn vendor, toggle spawning).
 - Pickup rule (sv_inventory `PlayerCanPickupWeapon`): only HL2BL loot (via +use) and
   our slot weapons are pickable; vanilla NPC/map weapons are blocked.
 - `hl2bl_rolltest [itemLevel]` — print sample rolls.
 - `give hl2bl_smg` (or `_pistol/_shotgun/_rifle/_sniper`) — spawn a gun.
-- `hl2bl_drop_chance <0..1>` (0.4), `hl2bl_ammo_chance <0..1>` (0.35).
+- `hl2bl_drop_chance <0..1>` (0.4), `hl2bl_ammo_chance <0..1>` (0.35),
+  `hl2bl_armor_chance <0..1>` (0.12) — armor drop chance (boss/elite boosted).
 - `hl2bl_spawn_enabled` + encounter director: `hl2bl_encounter_base/max/cooldown/
   travel`, `hl2bl_director_tick`, `hl2bl_spawn_wave` (per-tick), `hl2bl_spawn_max`
   (concurrent cap), `hl2bl_boss_every <N>` (boss every N encounters).

@@ -13,6 +13,9 @@ friends.
 - **Exciting drops** — rarity-colored light beams + glow and a sound that gets grander with
   rarity; epic/legendary finds are announced to everyone.
 - **4-slot loadout** — a per-player backpack; equip up to 4 guns and switch with `1`–`4`.
+- **HEV armor** — rolled suit pieces in 4 slots (Helmet, Vest, Greaves, Power Core) from
+  HL2 factions (Black Mesa, Combine, Resistance…). They buff your **suit-armor bar**,
+  **max health**, or **health regen**. Manage them in a paper-doll inventory (press `I`).
 - **Leveling** — kills grant XP; levels raise health and the quality of the loot you find.
 - **Enemies & bosses** — a spawn director keeps the action coming; enemies can roll **Badass**
   and other variants, and a **boss** appears every few waves with a health bar and a
