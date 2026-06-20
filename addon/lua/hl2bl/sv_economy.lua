@@ -37,5 +37,7 @@ hook.Add( "OnNPCKilled", "hl2bl_credits_kill", function( npc, attacker )
 		ply = attacker:GetOwner()
 	end
 	if not ( IsValid( ply ) and ply:IsPlayer() ) then return end
-	HL2BL.AddCredits( ply, math.random( 3, 8 ) + ply:GetNWInt( "hl2bl_level", 1 ) )
+	local base = math.random( 3, 8 ) + ply:GetNWInt( "hl2bl_level", 1 )
+	local mult = 1 + ( ( ply.HL2BL_Passive and ply.HL2BL_Passive.creditPct or 0 ) / 100 )   -- Greed artifact
+	HL2BL.AddCredits( ply, math.Round( base * mult ) )
 end )

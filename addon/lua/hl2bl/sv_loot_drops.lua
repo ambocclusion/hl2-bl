@@ -60,6 +60,15 @@ hook.Add( "OnNPCKilled", "hl2bl_loot_drops", function( npc, attacker, inflictor 
 	local luck       = ( boss and 0.25 or elite and 0.12 or 0 ) + ( npc.HL2BL_LootLuck or 0 )
 	local itemLevel  = lvl + ( boss and 3 or elite and 1 or 0 )
 
+	-- Independent artifact drop chance (boss/elite boosted).
+	if HL2BL.SpawnArtifact and HL2BL.RollArtifact then
+		local artChance = ( HL2BL.ArtifactChance and HL2BL.ArtifactChance:GetFloat() or 0.06 )
+			* ( boss and 4 or elite and 2 or 1 )
+		if npc.HL2BL_IsBoss or math.random() <= artChance then
+			HL2BL.SpawnArtifact( npc:WorldSpaceCenter() + Vector( 0, 0, 12 ), HL2BL.RollArtifact( itemLevel, luck ) )
+		end
+	end
+
 	-- Badass / forced-drop variants always drop.
 	if npc.HL2BL_ForceDrop then dropChance = 1 end
 

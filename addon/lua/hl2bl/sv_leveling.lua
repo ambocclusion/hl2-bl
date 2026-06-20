@@ -7,6 +7,8 @@ HL2BL = HL2BL or {}
 local function applyLevelStats( ply )
 	local lvl = ply:GetNWInt( "hl2bl_level", 1 )
 	ply:SetMaxHealth( 100 + ( lvl - 1 ) * 10 )
+	-- Let artifacts re-add their bonuses (e.g. Vitality max-HP) on top.
+	if HL2BL.RecomputePassive then HL2BL.RecomputePassive( ply ) end
 end
 
 local function store( ply, lvl, xp )
@@ -70,5 +72,7 @@ hook.Add( "OnNPCKilled", "hl2bl_xp", function( npc, attacker, inflictor )
 	if not ( IsValid( ply ) and ply:IsPlayer() ) then return end
 
 	local hp = npc:GetMaxHealth()
-	HL2BL.GiveXP( ply, math.max( 5, math.Round( ( hp > 0 and hp or 30 ) * 0.5 ) ) )
+	local xp   = math.max( 5, math.Round( ( hp > 0 and hp or 30 ) * 0.5 ) )
+	local mult = 1 + ( ( ply.HL2BL_Passive and ply.HL2BL_Passive.xpPct or 0 ) / 100 )   -- Scholar artifact
+	HL2BL.GiveXP( ply, math.Round( xp * mult ) )
 end )
