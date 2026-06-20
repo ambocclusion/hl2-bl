@@ -206,10 +206,27 @@ function HL2BL.NetReadStats()
 	return s
 end
 
---- Read a weapon/loot entity's rolled stats from its networked vars.
--- Works in both realms; returns nil if the entity hasn't been rolled.
+--- Read a weapon/loot entity's rolled stats.
+-- Prefers the atomic `hl2bl_statjson` blob (set once in ApplyStats): a single
+-- networked string can't deliver partial state, so remote clients won't briefly
+-- see a missing card or a Common-defaulted rarity while the individual NW vars
+-- are still arriving across snapshots. Parsing is cached per entity (keyed by the
+-- exact JSON) so the per-frame loot beam doesn't re-decode every tick. Falls back
+-- to the individual NW vars. Works in both realms; nil if not rolled yet.
 function HL2BL.GetEntStats( ent )
-	if not IsValid( ent ) or not ent:GetNWBool( "hl2bl_rolled", false ) then return nil end
+	if not IsValid( ent ) then return nil end
+
+	local j = ent:GetNWString( "hl2bl_statjson", "" )
+	if j ~= "" then
+		if ent.HL2BL_StatJSON == j and ent.HL2BL_StatCache then return ent.HL2BL_StatCache end
+		local s = util.JSONToTable( j )
+		if s then
+			ent.HL2BL_StatJSON, ent.HL2BL_StatCache = j, s
+			return s
+		end
+	end
+
+	if not ent:GetNWBool( "hl2bl_rolled", false ) then return nil end
 	return {
 		archetype     = ent:GetNWString( "hl2bl_arch", "smg" ),
 		manufacturer  = ent:GetNWString( "hl2bl_manu", "vanguard" ),

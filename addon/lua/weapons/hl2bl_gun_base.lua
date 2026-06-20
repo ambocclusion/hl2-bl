@@ -76,7 +76,33 @@ function SWEP:ApplyStats( s )
 	local parts = { HL2BL.ManufacturerName( s.manufacturer ) }
 	if s.element ~= HL2BL.Element.NONE then table.insert( parts, HL2BL.ElementName[ s.element ] ) end
 	table.insert( parts, a.name )
-	self:SetNWString( "hl2bl_name", table.concat( parts, " " ) )
+	local fullName = table.concat( parts, " " )
+	self:SetNWString( "hl2bl_name", fullName )
+
+	-- Atomic copy of the whole roll as ONE networked string (mirrors the armor /
+	-- artifact / grenade world pickups). World-loot stat cards + loot beams read
+	-- this so a remote client never sees partial state -- e.g. the card missing,
+	-- or rarity defaulting to Common -- while the ~13 separate NW vars above are
+	-- still trickling in across snapshots. The individual vars are kept for
+	-- held-weapon firing/prediction; this is just for display reliability.
+	local function r4( x ) return math.Round( ( tonumber( x ) or 0 ) * 1e4 ) / 1e4 end
+	self:SetNWString( "hl2bl_statjson", util.TableToJSON( {
+		kind          = "weapon",
+		archetype     = self:GetArchetype(),
+		manufacturer  = s.manufacturer or "vanguard",
+		name          = fullName,
+		rarity        = s.rarity,
+		element       = s.element,
+		itemLevel     = s.itemLevel,
+		damageMult    = r4( s.damageMult ),
+		fireRateMult  = r4( s.fireRateMult ),
+		spreadMult    = r4( s.spreadMult ),
+		reloadMult    = r4( s.reloadMult ),
+		magMult       = r4( s.magMult ),
+		recoilMult    = r4( s.recoilMult or 1 ),
+		elementChance = r4( s.elementChance ),
+		elementDamage = r4( s.elementDamage ),
+	} ) )
 end
 
 -- Reconfigure an (equipped slot) weapon to a specific archetype + roll.
