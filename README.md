@@ -41,6 +41,9 @@ scripts/install.sh
 1. Download/clone this repo.
 2. Double-click **`scripts/install.bat`**.
 
+📖 **Full Windows walkthrough (install, play, updating, troubleshooting):
+[docs/INSTALL-WINDOWS.md](docs/INSTALL-WINDOWS.md)**
+
 The installer auto-detects Garry's Mod across your Steam library folders. If it can't find
 it, point it at the folder manually:
 - Linux: `GMOD_DIR=/path/to/.../GarrysMod/garrysmod scripts/install.sh`
