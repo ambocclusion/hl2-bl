@@ -9,11 +9,18 @@
 HL2BL = HL2BL or {}
 HL2BL.Inv = HL2BL.Inv or { slots = {}, armor = {}, items = {} }
 
+-- Fallbacks if the shared armor module hasn't loaded on this client yet (e.g.
+-- it was added mid-session and not downloaded). Keeps the net read aligned with
+-- the server's fixed 4 armor slots so the rest of the sync doesn't desync.
+local ARMOR_SLOTS = HL2BL.ARMOR_SLOTS or { "helmet", "vest", "greaves", "core" }
+local ARMOR_NAME  = HL2BL.ArmorSlotName or { helmet = "Helmet", vest = "Vest", greaves = "Greaves", core = "Power Core" }
+local MAX_SLOTS   = HL2BL.MAX_SLOTS or 4
+
 net.Receive( "hl2bl_inv_sync", function()
 	local sl = {}
-	for i = 1, HL2BL.MAX_SLOTS do sl[i] = net.ReadUInt( 6 ) end
+	for i = 1, MAX_SLOTS do sl[i] = net.ReadUInt( 6 ) end
 	local ar = {}
-	for _, key in ipairs( HL2BL.ARMOR_SLOTS ) do ar[ key ] = net.ReadUInt( 6 ) end
+	for _, key in ipairs( ARMOR_SLOTS ) do ar[ key ] = net.ReadUInt( 6 ) end
 	local n = net.ReadUInt( 6 )
 	local items = {}
 	for i = 1, n do items[i] = HL2BL.NetReadItem() end
@@ -32,7 +39,7 @@ local function sendDrop( i )
 end
 
 local function weaponSlotOf( i )
-	for sl = 1, HL2BL.MAX_SLOTS do
+	for sl = 1, MAX_SLOTS do
 		if ( HL2BL.Inv.slots[ sl ] or 0 ) == i then return sl end
 	end
 end
@@ -66,7 +73,7 @@ local function buildEquipment( left )
 	local h1 = left:Add( "DLabel" )
 	h1:Dock( TOP ); h1:DockMargin( 8, 8, 8, 2 ); h1:SetFont( "HL2BL.Title" )
 	h1:SetText( "Weapons" ); h1:SetTextColor( color_white )
-	for sl = 1, HL2BL.MAX_SLOTS do
+	for sl = 1, MAX_SLOTS do
 		local idx  = HL2BL.Inv.slots[ sl ] or 0
 		local item = idx ~= 0 and items[ idx ] or nil
 		slotTile( left, "Slot " .. sl, item, item and function() sendEquip( idx ) end or nil )
@@ -75,10 +82,10 @@ local function buildEquipment( left )
 	local h2 = left:Add( "DLabel" )
 	h2:Dock( TOP ); h2:DockMargin( 8, 16, 8, 2 ); h2:SetFont( "HL2BL.Title" )
 	h2:SetText( "Armor (HEV Suit)" ); h2:SetTextColor( color_white )
-	for _, key in ipairs( HL2BL.ARMOR_SLOTS ) do
+	for _, key in ipairs( ARMOR_SLOTS ) do
 		local idx  = ( HL2BL.Inv.armor or {} )[ key ] or 0
 		local item = idx ~= 0 and items[ idx ] or nil
-		slotTile( left, HL2BL.ArmorSlotName[ key ], item, item and function() sendEquip( idx ) end or nil )
+		slotTile( left, ARMOR_NAME[ key ] or key, item, item and function() sendEquip( idx ) end or nil )
 	end
 end
 
@@ -94,7 +101,7 @@ local function buildList( scroll, kind )
 			local row = scroll:Add( "DPanel" )
 			row:Dock( TOP ); row:DockMargin( 4, 4, 4, 4 ); row:SetTall( 220 )
 			row.Paint = function()
-				if isArmor then HL2BL.DrawArmorCard( 0, 0, s ) else HL2BL.DrawStatCard( 0, 0, s ) end
+				if isArmor and HL2BL.DrawArmorCard then HL2BL.DrawArmorCard( 0, 0, s ) else HL2BL.DrawStatCard( 0, 0, s ) end
 			end
 
 			local equipped = isArmor and ( ( HL2BL.Inv.armor or {} )[ s.slot ] == i ) or weaponSlotOf( i )
