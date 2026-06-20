@@ -56,6 +56,11 @@ function HL2BL.OpenDebug()
 		btn( "Spawn " .. HL2BL.RarityName[ r ] .. " Artifact", function() send( "spawnartifact", r ) end, HL2BL.RarityColor[ r ] )
 	end
 
+	label( "Spawn grenade mod:" )
+	for r = 0, HL2BL.RARITY_COUNT - 1 do
+		btn( "Spawn " .. HL2BL.RarityName[ r ] .. " Grenade", function() send( "spawngrenade", r ) end, HL2BL.RarityColor[ r ] )
+	end
+
 	btn( "Spawn Vendor (where you look)", function() send( "vendor" ) end )
 	btn( "Toggle Enemy Spawning", function() send( "togglespawn" ) end )
 end

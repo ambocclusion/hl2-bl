@@ -131,7 +131,20 @@ Modules in `addon/lua/hl2bl/`:
   which sizes future encounters. Boss every N encounters. `cl_variant_tag` shows
   variant nameplates.
 - `sv_loot_drops.lua` — NPC death rolls a gun drop (elite/boss by max-health +
-  variant luck/forced-drop) or an ammo top-up; rarity-scaled drop fanfare.
+  variant luck/forced-drop) or an ammo top-up; rarity-scaled drop fanfare. Also
+  rolls independent artifact / grenade-mod / armor drops.
+- `sh_grenades.lua` + `sv_grenades.lua` + `entities/hl2bl_grenade.lua` +
+  `entities/hl2bl_grenademod.lua` + `cl_grenades.lua` — **grenades + grenade mods**.
+  Every player carries a recharging grenade **count** (NOT a weapon slot), thrown
+  with **G** (`hl2bl_throw`). A grenade **mod** is rarity-tiered loot with its own
+  single equip slot + bag (parallel to artifacts): it swaps the thrown "grenade
+  spec" — delivery TYPE (Standard / MIRV / Singularity / Transfusion / Sticky /
+  Bouncing Betty), optional ELEMENT, damage/radius, carry capacity + recharge.
+  With no mod you throw `BaseGrenadeSpec` (level-tracked frag). The thrown
+  `hl2bl_grenade` entity runs the type behaviour and calls the shared
+  `HL2BL.GrenadeBlast` (damages NPCs + breakables, so boxes can pop; co-op players
+  are spared; friendly NPCs filtered by the friendly-fire hook). Mods drop in the
+  world as `hl2bl_grenademod` (+use to grab), persist via PData.
 - `sv_inventory.lua` — per-player backpack of **mixed items** (each `kind`-tagged
   "weapon"/"armor") + up to 4 equipped weapon slots and 4 HEV armor slots; loot is
   picked up on **+use**; `hl2bl_inv_equip` routes armor to `EquipArmor`, weapons to
@@ -169,13 +182,19 @@ Modules in `addon/lua/hl2bl/`:
 - `hl2bl_give_armor [helmet|vest|greaves|core] [level]` — spawn a rolled armor piece
   into your backpack (superadmin; random slot if omitted).
 - `hl2bl_debug` — debug menu: **Reset my save** (own data, always allowed) + cheats
-  (credits, set level, spawn gun by rarity, spawn vendor, toggle spawning).
+  (credits, set level, spawn gun/artifact/grenade-mod by rarity, spawn vendor,
+  toggle spawning).
 - Pickup rule (sv_inventory `PlayerCanPickupWeapon`): only HL2BL loot (via +use) and
   our slot weapons are pickable; vanilla NPC/map weapons are blocked.
 - `hl2bl_rolltest [itemLevel]` — print sample rolls.
 - `give hl2bl_smg` (or `_pistol/_shotgun/_rifle/_sniper`) — spawn a gun.
+- `hl2bl_throw` — throw a grenade (does NOT use a weapon slot; bound to **G** by
+  default). Grenade count recharges over time; capacity/recharge come from the
+  equipped grenade mod (or the base frag). Equip mods in the inventory **Grenades**
+  tab; the debug menu can spawn a grenade mod by rarity.
 - `hl2bl_drop_chance <0..1>` (0.4), `hl2bl_ammo_chance <0..1>` (0.35),
   `hl2bl_armor_chance <0..1>` (0.12) — armor drop chance (boss/elite boosted).
+- `hl2bl_grenade_chance <0..1>` (0.05) — grenade-mod drop chance (boss/elite boosted).
 - `hl2bl_spawn_enabled` + encounter director: `hl2bl_encounter_base/max/cooldown/
   travel`, `hl2bl_director_tick`, `hl2bl_spawn_wave` (per-tick), `hl2bl_spawn_max`
   (concurrent cap), `hl2bl_boss_every <N>` (boss every N encounters).

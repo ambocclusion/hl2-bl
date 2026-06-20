@@ -71,6 +71,15 @@ hook.Add( "OnNPCKilled", "hl2bl_loot_drops", function( npc, attacker, inflictor 
 		end
 	end
 
+	-- Independent grenade-mod drop chance (boss/elite boosted).
+	if HL2BL.SpawnGrenadeMod and HL2BL.RollGrenade then
+		local grenChance = ( HL2BL.GrenadeChance and HL2BL.GrenadeChance:GetFloat() or 0.05 )
+			* ( boss and 4 or elite and 2 or 1 )
+		if npc.HL2BL_IsBoss or math.random() <= grenChance then
+			HL2BL.SpawnGrenadeMod( npc:WorldSpaceCenter() + Vector( 0, 0, 16 ), HL2BL.RollGrenade( itemLevel, luck ) )
+		end
+	end
+
 	-- Independent armor drop chance (boss/elite boosted).
 	if HL2BL.SpawnArmor and HL2BL.RollArmorStats then
 		local armChance = HL2BL.ArmorChance:GetFloat() * ( boss and 4 or elite and 2 or 1 )

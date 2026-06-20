@@ -73,6 +73,13 @@ net.Receive( "hl2bl_debug", function( _, ply )
 				HL2BL.RollArtifact( ply:GetNWInt( "hl2bl_level", 1 ), 0, rarity ) )
 		end
 
+	elseif action == "spawngrenade" then
+		local rarity = math.Clamp( math.floor( arg ), 0, HL2BL.RARITY_COUNT - 1 )
+		if HL2BL.SpawnGrenadeMod and HL2BL.RollGrenade then
+			HL2BL.SpawnGrenadeMod( ply:GetEyeTrace().HitPos + Vector( 0, 0, 16 ),
+				HL2BL.RollGrenade( ply:GetNWInt( "hl2bl_level", 1 ), 0, rarity ) )
+		end
+
 	elseif action == "vendor" then
 		local v = ents.Create( "hl2bl_vendor" )
 		if IsValid( v ) then v:SetPos( ply:GetEyeTrace().HitPos ); v:Spawn() end

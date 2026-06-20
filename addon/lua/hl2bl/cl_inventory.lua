@@ -147,6 +147,19 @@ local function buildEquipment( left )
 		color   = art and ( HL2BL.RarityColor[ art.rarity ] or color_white ) or nil,
 		onClick = art and function() net.Start( "hl2bl_art_equip" ); net.WriteUInt( aidx, 6 ); net.SendToServer() end or nil,
 	} )
+
+	local h4 = left:Add( "DLabel" )
+	h4:Dock( TOP ); h4:DockMargin( 8, 16, 8, 2 ); h4:SetFont( "HL2BL.Title" )
+	h4:SetText( "Grenade" ); h4:SetTextColor( color_white )
+	local grens = HL2BL.Grenades or { slot = 0, items = {} }
+	local gidx  = grens.slot or 0
+	local gren  = gidx ~= 0 and ( grens.items or {} )[ gidx ] or nil
+	slotTile( left, "Grenade Mod", {
+		name    = gren and ( gren.name or "Grenade" ) or "Standard Grenade",
+		sub     = gren and ( ( HL2BL.GrenadeTypes[ gren.type ] or {} ).name ) or "Base frag",
+		color   = gren and ( HL2BL.RarityColor[ gren.rarity ] or color_white ) or nil,
+		onClick = gren and function() net.Start( "hl2bl_gren_equip" ); net.WriteUInt( gidx, 6 ); net.SendToServer() end or nil,
+	} )
 end
 
 -- ---- right pane: category lists --------------------------------------------
@@ -222,11 +235,44 @@ local function buildArtifactList( scroll )
 	end
 end
 
+-- Grenade mods: their own bag (HL2BL.Grenades), single equip slot, own net path.
+local function buildGrenadeList( scroll )
+	scroll:Clear()
+	local grens = HL2BL.Grenades or { slot = 0, items = {} }
+	local items = grens.items or {}
+	if #items == 0 then
+		local l = scroll:Add( "DLabel" ); l:Dock( TOP ); l:DockMargin( 8, 8, 0, 0 )
+		l:SetText( "No grenade mods yet - kill enemies to find them. You always carry a basic grenade (throw with G)." )
+		l:SetWrap( true ); l:SetAutoStretchVertical( true ); l:SetWide( 430 )
+		return
+	end
+	for i, g in ipairs( items ) do
+		local row = scroll:Add( "DPanel" )
+		row:Dock( TOP ); row:DockMargin( 4, 4, 4, 4 ); row:SetTall( 200 )
+		row.Paint = function() if HL2BL.DrawGrenadeCard then HL2BL.DrawGrenadeCard( 0, 0, g ) end end
+
+		local eq  = ( i == grens.slot )
+		local btn = vgui.Create( "DButton", row )
+		btn:SetPos( 292, 72 ); btn:SetSize( 150, 40 )
+		btn:SetText( eq and "Equipped\n(click to unequip)" or "Equip" )
+		btn.DoClick = function() net.Start( "hl2bl_gren_equip" ); net.WriteUInt( i, 6 ); net.SendToServer() end
+
+		local drop = vgui.Create( "DButton", row )
+		drop:SetPos( 292, 120 ); drop:SetSize( 150, 30 )
+		drop:SetText( "Drop" ); drop:SetTextColor( Color( 235, 120, 120 ) )
+		drop.DoClick = function()
+			Derma_Query( "Drop " .. ( g.name or "this grenade mod" ) .. "?", "Drop", "Drop",
+				function() net.Start( "hl2bl_gren_drop" ); net.WriteUInt( i, 6 ); net.SendToServer() end, "Cancel" )
+		end
+	end
+end
+
 function HL2BL.RebuildInventory()
 	if IsValid( HL2BL._InvLeft )      then buildEquipment( HL2BL._InvLeft ) end
 	if IsValid( HL2BL._InvWeapons )   then buildList( HL2BL._InvWeapons, "weapon" ) end
 	if IsValid( HL2BL._InvArmor )     then buildList( HL2BL._InvArmor, "armor" ) end
 	if IsValid( HL2BL._InvArtifacts ) then buildArtifactList( HL2BL._InvArtifacts ) end
+	if IsValid( HL2BL._InvGrenades )  then buildGrenadeList( HL2BL._InvGrenades ) end
 end
 
 function HL2BL.OpenInventory()
@@ -259,6 +305,10 @@ function HL2BL.OpenInventory()
 	HL2BL._InvArtTab = sheet:AddSheet( "Artifacts", artScroll, "icon16/wand.png" ).Tab
 	HL2BL._InvArtifacts = artScroll
 
+	local grenScroll = vgui.Create( "DScrollPanel", sheet )
+	sheet:AddSheet( "Grenades", grenScroll, "icon16/bomb.png" )
+	HL2BL._InvGrenades = grenScroll
+
 	HL2BL.RebuildInventory()
 end
 
@@ -285,9 +335,15 @@ hook.Add( "HL2BL_ArtsUpdated", "hl2bl_inv_arts", function()
 	if IsValid( HL2BL._InvFrame ) then HL2BL.RebuildInventory() end
 end )
 
+-- Refresh the Grenades tab when the grenade-mod bag changes (syncs separately).
+hook.Add( "HL2BL_GrenadesUpdated", "hl2bl_inv_grens", function()
+	if IsValid( HL2BL._InvFrame ) then HL2BL.RebuildInventory() end
+end )
+
 hook.Add( "InitPostEntity", "hl2bl_inv_hint", function()
 	timer.Simple( 3, function()
 		chat.AddText( Color( 120, 200, 255 ), "[HL2BL] Press ", Color( 255, 255, 255 ), "I",
-			Color( 120, 200, 255 ), " for your inventory (weapons + armor). Switch guns with 1-4." )
+			Color( 120, 200, 255 ), " for your inventory. Switch guns with 1-4, throw grenades with ",
+			Color( 255, 255, 255 ), "G", Color( 120, 200, 255 ), "." )
 	end )
 end )

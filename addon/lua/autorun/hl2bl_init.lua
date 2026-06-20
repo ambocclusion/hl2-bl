@@ -17,6 +17,7 @@ HL2BL.Modules = {
 	{ "shared", "hl2bl/sh_loot.lua" },
 	{ "shared", "hl2bl/sh_armor.lua" },
 	{ "shared", "hl2bl/sh_artifacts.lua" },
+	{ "shared", "hl2bl/sh_grenades.lua" },
 	-- Server
 	{ "server", "hl2bl/sv_variants.lua" },
 	{ "server", "hl2bl/sv_spawner.lua" },
@@ -25,6 +26,7 @@ HL2BL.Modules = {
 	{ "server", "hl2bl/sv_leveling.lua" },
 	{ "server", "hl2bl/sv_inventory.lua" },
 	{ "server", "hl2bl/sv_artifacts.lua" },
+	{ "server", "hl2bl/sv_grenades.lua" },
 	{ "server", "hl2bl/sv_armor.lua" },
 	{ "server", "hl2bl/sv_economy.lua" },
 	{ "server", "hl2bl/sv_vendor.lua" },
@@ -35,6 +37,7 @@ HL2BL.Modules = {
 	-- Client
 	{ "client", "hl2bl/cl_statcard.lua" },
 	{ "client", "hl2bl/cl_artifacts.lua" },
+	{ "client", "hl2bl/cl_grenades.lua" },
 	{ "client", "hl2bl/cl_leveling_hud.lua" },
 	{ "client", "hl2bl/cl_inventory.lua" },
 	{ "client", "hl2bl/cl_loot_beam.lua" },
