@@ -8,6 +8,7 @@ HL2BL = HL2BL or {}
 
 util.AddNetworkString( "hl2bl_inv_sync" )
 util.AddNetworkString( "hl2bl_inv_equip" )   -- toggle equip/unequip by backpack index
+util.AddNetworkString( "hl2bl_inv_drop" )    -- drop a backpack gun into the world
 
 local MAX_INV   = 32
 local MAX_SLOTS = HL2BL.MAX_SLOTS
@@ -173,6 +174,25 @@ end )
 
 net.Receive( "hl2bl_inv_equip", function( _, ply )
 	toggleEquip( ply, net.ReadUInt( 6 ) )
+end )
+
+-- Drop a backpack gun in front of the player as world loot.
+net.Receive( "hl2bl_inv_drop", function( _, ply )
+	local removed = HL2BL.InventoryRemove( ply, net.ReadUInt( 6 ) )
+	if not removed then return end
+
+	local w = ents.Create( "hl2bl_" .. ( removed.archetype or "smg" ) )
+	if not IsValid( w ) then return end
+
+	local fwd = ply:GetAimVector()
+	w:SetPos( ply:GetShootPos() + fwd * 40 )
+	w:SetAngles( AngleRand() )
+	w.HL2BL_IsLoot = true
+	w:Spawn()
+	if w.ApplyStats then w:ApplyStats( removed ) end
+
+	local phys = w:GetPhysicsObject()
+	if IsValid( phys ) then phys:SetVelocity( fwd * 150 + Vector( 0, 0, 80 ) ) end
 end )
 
 hook.Add( "PlayerInitialSpawn", "hl2bl_inv_init", function( ply )

@@ -53,12 +53,25 @@ function HL2BL.RebuildInventory()
 
 		local sl  = slotOfItem( i )
 		local btn = vgui.Create( "DButton", row )
-		btn:SetPos( 292, 92 ); btn:SetSize( 130, 40 )
+		btn:SetPos( 292, 72 ); btn:SetSize( 150, 40 )
 		btn:SetText( sl and ( "Equipped (Slot " .. sl .. ")\nclick to unequip" ) or "Equip" )
 		btn.DoClick = function()
 			net.Start( "hl2bl_inv_equip" )
 				net.WriteUInt( i, 6 )
 			net.SendToServer()
+		end
+
+		local drop = vgui.Create( "DButton", row )
+		drop:SetPos( 292, 120 ); drop:SetSize( 150, 30 )
+		drop:SetText( "Drop" )
+		drop:SetTextColor( Color( 235, 120, 120 ) )
+		drop.DoClick = function()
+			local name = ( s.name ~= "" and s.name ) or "this gun"
+			Derma_Query( "Drop " .. name .. "?", "Drop weapon", "Drop", function()
+				net.Start( "hl2bl_inv_drop" )
+					net.WriteUInt( i, 6 )
+				net.SendToServer()
+			end, "Cancel" )
 		end
 	end
 end

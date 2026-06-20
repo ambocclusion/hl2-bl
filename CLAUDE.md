@@ -26,9 +26,12 @@ Borderlands systems in Lua on top. Do not try to revive the C++ co-op approach.
 
 ## Branches
 
-- **`gmod`** — ACTIVE. The Garry's Mod addon (this branch's `addon/`).
-- `hl2bl-coop` — the abandoned C++ HL2MP exploration (Phases 1–2, gun data model). Kept for
-  reference/history; the C++ source tree (`src/`, `game/`) lives there, not on `gmod`.
+- **`main`** — ACTIVE and published to `origin` (git@github.com:ambocclusion/hl2-bl.git).
+  Clean project-only history (orphan root); this is where work happens and what's pushed.
+- `gmod` — local-only; the granular development history (commit-by-commit), built atop a
+  shallow `source-sdk-2013` clone so it **can't be pushed**. Kept for reference.
+- `hl2bl-coop` — local-only; the abandoned C++ HL2MP exploration (the `src/`, `game/` SDK
+  tree lives here, gitignored elsewhere).
 - `hl2bl`, `singleplayer`, `upstream-mp` — earlier SDK branches; ignore.
 
 ## Gamemode vs addon
