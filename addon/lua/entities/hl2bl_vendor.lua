@@ -30,6 +30,8 @@ if SERVER then
 		self:SetMoveType( MOVETYPE_NONE )
 		self:SetSolid( SOLID_BBOX )
 		self:SetCollisionBounds( Vector( -16, -16, 0 ), Vector( 16, 16, 72 ) )
+		-- Keep bounds (so +use can target it) but don't block players walking through.
+		self:SetCollisionGroup( COLLISION_GROUP_WEAPON )
 		self:SetUseType( SIMPLE_USE )
 		self:DropToFloor()
 		self:SetupIdle()
