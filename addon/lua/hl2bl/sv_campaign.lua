@@ -66,14 +66,40 @@ concommand.Add( "hl2bl_campaign_next", function( ply )
 	else for _, p in ipairs( player.GetAll() ) do p:ChatPrint( "[HL2BL] No next campaign map (end, or off-list map)." ) end end
 end, nil, "Advance to the next HL2 campaign map." )
 
--- Best-effort auto-advance via level-transition triggers.
+-- Target map for a trigger: its own destination if readable, else next in order.
+local function triggerTarget( t )
+	local m = t.GetInternalVariable and t:GetInternalVariable( "m_szMapName" )
+	if m and m ~= "" then return m end
+	return nextMap()
+end
+
+-- A player is "at" a transition if touching it, or inside its brush bounds
+-- (GMod doesn't reliably report touch for these, so we test the AABB too).
+local function playerAtTrigger( ply, t )
+	for _, e in ipairs( t:GetTouchingEntities() ) do if e == ply then return true end end
+	local lp = t:WorldToLocal( ply:WorldSpaceCenter() )
+	return lp:WithinAABox( t:OBBMins(), t:OBBMaxs() )
+end
+
+-- Don't auto-advance right after spawning (players may overlap the back-transition).
+hook.Add( "InitPostEntity", "hl2bl_campaign_loadtime", function() HL2BL._MapStart = CurTime() end )
+
+-- GMod doesn't fire trigger_changelevel itself in multiplayer, so we drive it:
+-- when any player reaches a level transition, change the whole group's level.
 timer.Create( "hl2bl_campaign_watch", 1, 0, function()
 	if changing or not HL2BL.CampaignAuto:GetBool() then return end
-	for _, t in ipairs( ents.FindByClass( "trigger_changelevel" ) ) do
-		local map = t.GetInternalVariable and t:GetInternalVariable( "m_szMapName" )
-		if map and map ~= "" then
-			for _, e in ipairs( t:GetTouchingEntities() ) do
-				if IsValid( e ) and e:IsPlayer() then changeTo( map ); return end
+	if CurTime() - ( HL2BL._MapStart or 0 ) < 6 then return end   -- spawn grace
+
+	local triggers = ents.FindByClass( "trigger_changelevel" )
+	if #triggers == 0 then return end
+
+	for _, ply in ipairs( player.GetAll() ) do
+		if ply:Alive() then
+			for _, t in ipairs( triggers ) do
+				if IsValid( t ) and playerAtTrigger( ply, t ) then
+					changeTo( triggerTarget( t ) )
+					return
+				end
 			end
 		end
 	end
