@@ -107,6 +107,14 @@ hook.Add( "HUDPaint", "hl2bl_health_bars", function()
 					draw.SimpleText( math.floor( hp ) .. "/" .. math.floor( maxhp ),
 						"HL2BL.HealthBar", x + BAR_W * 0.5, y + BAR_H * 0.5,
 						color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+					-- Derived enemy level, as a gold tag just left of the bar.
+					local lvl = npc:GetNWInt( "hl2bl_npclevel", 0 )
+					if lvl > 0 then
+						draw.SimpleTextOutlined( "Lv " .. lvl, "HL2BL.HealthBar", x - 7,
+							y + BAR_H * 0.5, Color( 255, 220, 120 ),
+							TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, 1, color_black )
+					end
 				end
 			end
 		end

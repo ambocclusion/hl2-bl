@@ -9,6 +9,9 @@ HL2BL = HL2BL or {}
 HL2BL.BadassChance = CreateConVar( "hl2bl_badass_chance", "0.08", FCVAR_ARCHIVE,
 	"Chance a hostile NPC becomes a Badass." )
 
+HL2BL.NPCDamageScale = CreateConVar( "hl2bl_npc_dmg_scale", "1", FCVAR_ARCHIVE,
+	"How strongly enemy damage scales with enemy level (1 = full LevelScale curve, 0 = off)." )
+
 -- Hostile classes we augment (HL2BL.EnemyClasses) live in sh_enemies.lua, shared
 -- so the client health-bar HUD can identify enemies too.
 
@@ -35,9 +38,15 @@ function HL2BL.ApplyVariant( npc )
 	if not IsValid( npc ) or npc.HL2BL_Variant then return end
 	npc.HL2BL_Variant = "normal"
 
-	local lvl     = nearestPlayerLevel( npc )
-	local baseHP  = npc:GetMaxHealth(); if baseHP <= 0 then baseHP = math.max( 1, npc:Health() ) end
-	local lvlMult = 1 + ( lvl - 1 ) * 0.05
+	-- Derive this enemy's level from the nearest player (+1). This single value is
+	-- the parent that both its health (EnemyHealthScale) and its outgoing damage
+	-- (LevelScale, in the damage hook below) scale from -- neither reads the
+	-- player's level directly.
+	local enemyLevel = HL2BL.EnemyLevel( nearestPlayerLevel( npc ), false )
+	npc.HL2BL_Level  = enemyLevel
+	npc:SetNWInt( "hl2bl_npclevel", enemyLevel )
+
+	local baseHP = npc:GetMaxHealth(); if baseHP <= 0 then baseHP = math.max( 1, npc:Health() ) end
 
 	-- Roll a variant.
 	local r = math.random()
@@ -46,7 +55,7 @@ function HL2BL.ApplyVariant( npc )
 	elseif r < HL2BL.BadassChance:GetFloat() + 0.06 then v = VARIANTS.armored
 	elseif r < HL2BL.BadassChance:GetFloat() + 0.18 then v = VARIANTS.runner end
 
-	local hp = math.ceil( baseHP * lvlMult * ( v and v.hp or 1 ) )
+	local hp = math.ceil( baseHP * HL2BL.EnemyHealthScale( enemyLevel ) * ( v and v.hp or 1 ) )
 	npc:SetMaxHealth( hp )
 	npc:SetHealth( hp )
 
@@ -74,8 +83,14 @@ function HL2BL.MakeBoss( npc, level )
 	if not IsValid( npc ) then return end
 	npc.HL2BL_Variant = "Boss"
 
+	-- Boss level is the player level +3 (same derived-level system as ApplyVariant);
+	-- its health and outgoing damage both scale from it.
+	local bossLevel = HL2BL.EnemyLevel( level, true )
+	npc.HL2BL_Level = bossLevel
+	npc:SetNWInt( "hl2bl_npclevel", bossLevel )
+
 	local baseHP = npc:GetMaxHealth(); if baseHP <= 0 then baseHP = math.max( 1, npc:Health() ) end
-	local hp = math.ceil( baseHP * ( 12 + level * 0.5 ) )
+	local hp = math.ceil( baseHP * ( 12 + bossLevel * 0.5 ) )
 	npc:SetMaxHealth( hp )
 	npc:SetHealth( hp )
 	npc:SetModelScale( 1.8, 0 )
@@ -98,6 +113,24 @@ function HL2BL.MakeBoss( npc, level )
 		ply:EmitSound( "ambient/levels/labs/electric_explosion4.wav", 80, 90 )
 	end
 end
+
+-- ---- enemy damage scaling --------------------------------------------------
+-- Enemies hit harder as their (derived) level rises. We scale the damage they
+-- deal to players by LevelScale(enemyLevel) -- the same curve player guns use --
+-- blended by hl2bl_npc_dmg_scale so admins can soften or disable it.
+hook.Add( "EntityTakeDamage", "hl2bl_npc_damage_scale", function( target, dmg )
+	if not ( IsValid( target ) and target:IsPlayer() ) then return end
+
+	-- Resolve the attacker to the NPC (it may be the NPC's weapon).
+	local att = dmg:GetAttacker()
+	local npc = att
+	if IsValid( att ) and att:IsWeapon() and IsValid( att:GetOwner() ) then npc = att:GetOwner() end
+	if not ( IsValid( npc ) and npc:IsNPC() and npc.HL2BL_Level ) then return end
+
+	local k = HL2BL.NPCDamageScale:GetFloat()
+	if k <= 0 then return end
+	dmg:ScaleDamage( 1 + ( HL2BL.LevelScale( npc.HL2BL_Level ) - 1 ) * k )
+end )
 
 -- Keep the boss's networked health current for the client bar.
 hook.Add( "Think", "hl2bl_boss_hp", function()

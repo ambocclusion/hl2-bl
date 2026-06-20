@@ -19,6 +19,8 @@ hook.Add( "HUDPaint", "hl2bl_boss_hud", function()
 	local hp    = boss:GetNWInt( "hl2bl_boss_hp", 0 )
 	local frac  = math.Clamp( hp / math.max( 1, maxhp ), 0, 1 )
 	local name  = boss:GetNWString( "hl2bl_boss_name", "Boss" )
+	local lvl   = boss:GetNWInt( "hl2bl_npclevel", 0 )
+	if lvl > 0 then name = name .. "  (Lv " .. lvl .. ")" end
 
 	local w, h = ScrW() * 0.5, 26
 	local x, y = ( ScrW() - w ) * 0.5, 70

@@ -115,9 +115,15 @@ Modules in `addon/lua/hl2bl/`:
   multi-pellet + recoil + reserve-ammo + element procs; dynamic viewmodel in
   Deploy). Droppable/spawnable wrappers: `hl2bl_pistol/smg/shotgun/rifle/sniper`;
   equipped slots: `hl2bl_slot1..4`.
-- `sv_variants.lua` — every hostile NPC (`EnemyClasses`) is level-scaled and may
-  roll a variant: Badass (5x hp, big, guaranteed great loot), Armored, Runner;
-  tints/scales/speeds + chat announce. Sets `HL2BL_LootLuck`/`HL2BL_ForceDrop`.
+- `sv_variants.lua` — every hostile NPC gets a **derived enemy level** = nearest
+  player level +1 (boss +3), stored on `npc.HL2BL_Level` and networked as
+  `hl2bl_npclevel`. That single value is the parent both its health
+  (`EnemyHealthScale`) and its outgoing damage (`LevelScale`, via an
+  `EntityTakeDamage` hook scaled by `hl2bl_npc_dmg_scale`) derive from — neither
+  reads player level directly. NPCs may also roll a variant: Badass (5x hp, big,
+  guaranteed great loot), Armored, Runner; tints/scales/speeds + chat announce.
+  Sets `HL2BL_LootLuck`/`HL2BL_ForceDrop`. The level math lives in
+  `sh_progression.lua` (`EnemyLevel`/`EnemyHealthScale`).
 - `sv_spawner.lua` — **encounter director**: moving into a new area spawns a finite
   budget of enemies (with variance) over a few ticks at traced floor spots out of
   sight, then STOPS once cleared; next area starts the next encounter after a
@@ -156,6 +162,8 @@ Modules in `addon/lua/hl2bl/`:
   travel`, `hl2bl_director_tick`, `hl2bl_spawn_wave` (per-tick), `hl2bl_spawn_max`
   (concurrent cap), `hl2bl_boss_every <N>` (boss every N encounters).
 - `hl2bl_badass_chance <0..1>` (0.08) — variant roll chance.
+- `hl2bl_npc_dmg_scale <0..>` (1) — how strongly enemy damage scales with enemy
+  level (1 = full `LevelScale` curve, 0 = enemies deal base damage).
 - `hl2bl_campaign_start` / `hl2bl_campaign_next` (superadmin) — campaign maps.
 - `hl2bl_campaign_auto <0|1>` (1) — auto-advance at level transitions.
 
