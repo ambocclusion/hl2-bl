@@ -84,3 +84,15 @@ end
 hook.Add( "HL2BL_InvUpdated", "hl2bl_vendor_refresh", function()
 	if IsValid( HL2BL._VendorFrame ) then HL2BL.RebuildVendor() end
 end )
+
+-- "[E] Vendor" prompt when looking at a vendor.
+hook.Add( "HUDPaint", "hl2bl_vendor_prompt", function()
+	local ply = LocalPlayer()
+	if not IsValid( ply ) or not ply:Alive() then return end
+	local ent = ply:GetEyeTrace().Entity
+	if not IsValid( ent ) or ent:GetClass() ~= "hl2bl_vendor" then return end
+	if ent:GetPos():DistToSqr( ply:EyePos() ) > 150 * 150 then return end
+
+	draw.SimpleText( "[E] Vendor  -  Buy / Sell", "HL2BL.Title", ScrW() * 0.5, ScrH() * 0.62,
+		Color( 90, 230, 120 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+end )

@@ -1,29 +1,38 @@
---[[ hl2bl: vending machine entity -------------------------------------------
-	+use to open the buy/sell UI. Holds a rotating low-rarity-skewed stock.
+--[[ hl2bl: vendor NPC -------------------------------------------------------
+	A stationary citizen "shopkeeper" you +use to open the buy/sell UI. Holds a
+	rotating, low-rarity-skewed stock.
 ----------------------------------------------------------------------------]]
 AddCSLuaFile()
 
-ENT.Type            = "anim"
-ENT.Base            = "base_gmodentity"
-ENT.PrintName       = "HL2BL Vending Machine"
-ENT.Author          = "hl2bl"
-ENT.Category        = "HL2: Borderlands"
-ENT.Spawnable       = true
-ENT.AdminSpawnable  = true
+ENT.Type           = "anim"
+ENT.Base           = "base_gmodentity"
+ENT.PrintName      = "HL2BL Vendor"
+ENT.Author         = "hl2bl"
+ENT.Category       = "HL2: Borderlands"
+ENT.Spawnable      = true
+ENT.AdminSpawnable = true
 
-local MODEL = "models/props_c17/console01a.mdl"
+local MODEL = "models/humans/group01/male_07.mdl"
+
+function ENT:SetupIdle()
+	local seq = self:LookupSequence( "idle_subtle" )
+	if seq <= 0 then seq = self:LookupSequence( "idle_all_01" ) end
+	if seq <= 0 then seq = self:SelectWeightedSequence( ACT_IDLE ) end
+	if seq and seq > 0 then self:ResetSequence( seq ) end
+	self:SetCycle( math.Rand( 0, 1 ) )
+	self:SetAutomaticFrameAdvance( true )   -- keep the idle animating
+end
 
 if SERVER then
 
 	function ENT:Initialize()
 		self:SetModel( MODEL )
-		self:PhysicsInit( SOLID_VPHYSICS )
-		self:SetMoveType( MOVETYPE_VPHYSICS )
-		self:SetSolid( SOLID_VPHYSICS )
+		self:SetMoveType( MOVETYPE_NONE )
+		self:SetSolid( SOLID_BBOX )
+		self:SetCollisionBounds( Vector( -16, -16, 0 ), Vector( 16, 16, 72 ) )
 		self:SetUseType( SIMPLE_USE )
-
-		local phys = self:GetPhysicsObject()
-		if IsValid( phys ) then phys:EnableMotion( false ) end
+		self:DropToFloor()
+		self:SetupIdle()
 
 		self.Stock = {}
 		self.NextRefresh = 0
@@ -33,7 +42,7 @@ if SERVER then
 	function ENT:RefreshStock( level )
 		self.Stock = {}
 		for i = 1, 8 do self.Stock[ i ] = HL2BL.RollVendorStats( level or 1 ) end
-		self.NextRefresh = CurTime() + 300   -- restock every 5 min
+		self.NextRefresh = CurTime() + 300
 	end
 
 	function ENT:Use( activator )
@@ -46,14 +55,18 @@ if SERVER then
 
 else -- CLIENT
 
-	function ENT:Initialize() self:SetModel( MODEL ) end
+	local matGlow = Material( "sprites/light_glow02_add" )
+
+	function ENT:Initialize()
+		self:SetModel( MODEL )
+		self:SetupIdle()
+	end
 
 	function ENT:Draw()
 		self:DrawModel()
-		-- subtle green glow so it's findable
-		local p = self:LocalToWorld( self:OBBCenter() ) + self:GetUp() * 30
-		render.SetMaterial( Material( "sprites/light_glow02_add" ) )
-		render.DrawSprite( p, 40, 40, Color( 90, 230, 120, 200 ) )
+		-- floating green glow so the vendor is easy to spot
+		render.SetMaterial( matGlow )
+		render.DrawSprite( self:GetPos() + Vector( 0, 0, 84 ), 36, 36, Color( 90, 230, 120, 200 ) )
 	end
 
 end
