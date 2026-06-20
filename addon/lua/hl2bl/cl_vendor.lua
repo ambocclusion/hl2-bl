@@ -7,16 +7,20 @@ net.Receive( "hl2bl_vendor_open", function()
 	local vendor = net.ReadEntity()
 	local n = net.ReadUInt( 6 )
 	local stock = {}
-	for i = 1, n do stock[ i ] = HL2BL.NetReadStats() end
+	for i = 1, n do
+		local isArt = net.ReadBool()
+		stock[ i ] = { kind = isArt and "artifact" or "gun",
+		               data = isArt and HL2BL.NetReadArtifact() or HL2BL.NetReadStats() }
+	end
 	HL2BL._VendorEnt   = vendor
 	HL2BL._VendorStock = stock
 	HL2BL.OpenVendorUI()
 end )
 
-local function addRow( parent, stats, btnText, enabled, onClick )
+local function addRow( parent, paintFn, btnText, enabled, onClick )
 	local row = parent:Add( "DPanel" )
 	row:Dock( TOP ); row:DockMargin( 4, 4, 4, 4 ); row:SetTall( 224 )
-	row.Paint = function() HL2BL.DrawStatCard( 0, 0, stats ) end
+	row.Paint = paintFn
 
 	local btn = vgui.Create( "DButton", row )
 	btn:SetPos( 292, 92 ); btn:SetSize( 158, 40 )
@@ -37,9 +41,12 @@ function HL2BL.RebuildVendor()
 	buy:Clear()
 	local stock = HL2BL._VendorStock or {}
 	if #stock == 0 then emptyLabel( buy, "Sold out - check back after a restock." ) end
-	for i, s in ipairs( stock ) do
-		local price = HL2BL.GunPrice( s )
-		addRow( buy, s, "Buy  -  " .. price .. " cr", credits >= price, function()
+	for i, e in ipairs( stock ) do
+		local isArt = ( e.kind == "artifact" )
+		local price = isArt and HL2BL.ArtifactPrice( e.data ) or HL2BL.GunPrice( e.data )
+		local paint = isArt and function() HL2BL.DrawArtifactCard( 0, 0, e.data ) end
+			or function() HL2BL.DrawStatCard( 0, 0, e.data ) end
+		addRow( buy, paint, "Buy  -  " .. price .. " cr", credits >= price, function()
 			net.Start( "hl2bl_vendor_buy" )
 				net.WriteEntity( HL2BL._VendorEnt )
 				net.WriteUInt( i, 6 )
@@ -52,7 +59,8 @@ function HL2BL.RebuildVendor()
 	local items = HL2BL.Inv and HL2BL.Inv.items or {}
 	if #items == 0 then emptyLabel( sell, "Backpack empty - nothing to sell." ) end
 	for i, s in ipairs( items ) do
-		addRow( sell, s, "Sell  -  " .. HL2BL.GunSellPrice( s ) .. " cr", true, function()
+		addRow( sell, function() HL2BL.DrawStatCard( 0, 0, s ) end,
+			"Sell  -  " .. HL2BL.GunSellPrice( s ) .. " cr", true, function()
 			net.Start( "hl2bl_vendor_sell" )
 				net.WriteUInt( i, 6 )
 			net.SendToServer()

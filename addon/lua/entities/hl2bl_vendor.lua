@@ -42,8 +42,16 @@ if SERVER then
 	end
 
 	function ENT:RefreshStock( level )
+		level = level or 1
 		self.Stock = {}
-		for i = 1, 8 do self.Stock[ i ] = HL2BL.RollVendorStats( level or 1 ) end
+		for i = 1, 8 do
+			-- Super super rare: a slot is occasionally an artifact instead of a gun.
+			if HL2BL.RollArtifact and math.random() < 0.02 then
+				self.Stock[ i ] = { kind = "artifact", data = HL2BL.RollArtifact( level, -0.1 ) }
+			else
+				self.Stock[ i ] = { kind = "gun", data = HL2BL.RollVendorStats( level ) }
+			end
+		end
 		self.NextRefresh = CurTime() + 300
 	end
 

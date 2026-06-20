@@ -11,7 +11,11 @@ local function sendStock( ply, vendor )
 	net.Start( "hl2bl_vendor_open" )
 		net.WriteEntity( vendor )
 		net.WriteUInt( #vendor.Stock, 6 )
-		for _, s in ipairs( vendor.Stock ) do HL2BL.NetWriteStats( s ) end
+		for _, e in ipairs( vendor.Stock ) do
+			local isArt = ( e.kind == "artifact" )
+			net.WriteBool( isArt )
+			if isArt then HL2BL.NetWriteArtifact( e.data ) else HL2BL.NetWriteStats( e.data ) end
+		end
 	net.Send( ply )
 end
 
@@ -30,12 +34,18 @@ net.Receive( "hl2bl_vendor_buy", function( _, ply )
 	if not near( ply, vendor ) then return end
 
 	local stock = vendor.Stock or {}
-	local s = stock[ idx ]
-	if not s then return end
+	local e = stock[ idx ]
+	if not e then return end
 
-	local price = HL2BL.GunPrice( s )
+	local isArt = ( e.kind == "artifact" )
+	local price = isArt and HL2BL.ArtifactPrice( e.data ) or HL2BL.GunPrice( e.data )
 	if HL2BL.GetCredits( ply ) < price then ply:ChatPrint( "[HL2BL] Not enough credits." ); return end
-	if not HL2BL.InventoryAdd( ply, table.Copy( s ) ) then ply:ChatPrint( "[HL2BL] Backpack full." ); return end
+
+	if isArt then
+		if not HL2BL.GiveArtifact( ply, table.Copy( e.data ) ) then return end
+	else
+		if not HL2BL.InventoryAdd( ply, table.Copy( e.data ) ) then ply:ChatPrint( "[HL2BL] Backpack full." ); return end
+	end
 
 	HL2BL.TakeCredits( ply, price )
 	table.remove( stock, idx )

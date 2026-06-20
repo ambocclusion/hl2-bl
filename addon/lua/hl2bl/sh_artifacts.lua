@@ -73,9 +73,10 @@ local function pickDistinct( list, n )
 end
 
 -- Roll a fresh artifact. Returns a table: { rarity, itemLevel, kind, parts, name }.
-function HL2BL.RollArtifact( itemLevel, luck )
+-- forceRarity overrides the rarity roll (used by the debug spawner).
+function HL2BL.RollArtifact( itemLevel, luck, forceRarity )
 	itemLevel = math.max( 1, itemLevel or 1 )
-	local rarity = rollRarity( itemLevel, luck )
+	local rarity = forceRarity or rollRarity( itemLevel, luck )
 	local nElements = ( { [0] = 1, [1] = 1, [2] = 2, [3] = 2, [4] = 3 } )[ rarity ] or 1
 
 	local art = { rarity = rarity, itemLevel = itemLevel }
@@ -124,6 +125,12 @@ function HL2BL.ArtifactDescLines( art )
 		end
 	end
 	return lines
+end
+
+-- Vendor pricing (artifacts are pricier than guns - they're powerful + rare).
+local ART_RARITY_PRICE = { [0] = 4, [1] = 8, [2] = 16, [3] = 35, [4] = 90 }
+function HL2BL.ArtifactPrice( a )
+	return math.Round( ( 80 + ( a.itemLevel or 1 ) * 18 ) * ( ART_RARITY_PRICE[ a.rarity ] or 4 ) )
 end
 
 -- Net (de)serialize.
