@@ -13,6 +13,12 @@ surface.CreateFont( "HL2BL.HealthBar", { font = "Roboto", size = 14, weight = 70
 local BAR_W, BAR_H = 66, 16
 local RANGE2       = 1600 * 1600
 
+-- True if world geometry blocks the eye->target line (so bars don't show through walls).
+local function occluded( eye, target, ply )
+	local tr = util.TraceLine( { start = eye, endpos = target, filter = ply, mask = MASK_SOLID_BRUSHONLY } )
+	return tr.Hit
+end
+
 local grad      = Material( "gui/gradient" )
 local GOLD      = Color( 255, 200,  70 )
 local GOLD_HI   = Color( 255, 240, 170 )
@@ -74,7 +80,7 @@ hook.Add( "HUDPaint", "hl2bl_health_bars", function()
 			and not npc:GetNWBool( "hl2bl_isboss", false ) then
 
 			local center = npc:WorldSpaceCenter()
-			if center:DistToSqr( eye ) < RANGE2 then
+			if center:DistToSqr( eye ) < RANGE2 and not occluded( eye, center, ply ) then
 				local top = npc:GetPos() + Vector( 0, 0, npc:OBBMaxs().z + 12 )
 				local scr = top:ToScreen()
 				if scr.visible then

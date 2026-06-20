@@ -21,7 +21,8 @@ hook.Add( "HUDPaint", "hl2bl_variant_tag", function()
 		local id = npc:GetNWString( "hl2bl_variant", "" )
 		if id ~= "" and npc:Health() > 0 then
 			local pos = npc:WorldSpaceCenter()
-			if pos:DistToSqr( eye ) < 1600 * 1600 then
+			local tr  = util.TraceLine( { start = eye, endpos = pos, filter = ply, mask = MASK_SOLID_BRUSHONLY } )
+			if pos:DistToSqr( eye ) < 1600 * 1600 and not tr.Hit then
 				-- Sit above the floating health bar (cl_health_bars).
 				local top = npc:GetPos() + Vector( 0, 0, npc:OBBMaxs().z + 28 )
 				local scr = top:ToScreen()
