@@ -6,49 +6,94 @@
 HL2BL = HL2BL or {}
 HL2BL.Version = "0.1.0"
 
--- include() searches the lua/ path, so module paths are relative to lua/.
-local function loadShared( path )
-	if SERVER then AddCSLuaFile( path ) end
-	include( path )
+-- Module manifest, in load order. Realm is one of "shared"/"server"/"client";
+-- include() searches the lua/ path, so paths are relative to lua/. This list is
+-- the single source of truth for both initial load and hot reload (hl2bl_reload).
+HL2BL.Modules = {
+	-- Shared
+	{ "shared", "hl2bl/sh_archetypes.lua" },
+	{ "shared", "hl2bl/sh_progression.lua" },
+	{ "shared", "hl2bl/sh_enemies.lua" },
+	{ "shared", "hl2bl/sh_loot.lua" },
+	-- Server
+	{ "server", "hl2bl/sv_variants.lua" },
+	{ "server", "hl2bl/sv_spawner.lua" },
+	{ "server", "hl2bl/sv_loot_drops.lua" },
+	{ "server", "hl2bl/sv_leveling.lua" },
+	{ "server", "hl2bl/sv_inventory.lua" },
+	{ "server", "hl2bl/sv_economy.lua" },
+	{ "server", "hl2bl/sv_vendor.lua" },
+	{ "server", "hl2bl/sv_campaign.lua" },
+	{ "server", "hl2bl/sv_updatecheck.lua" },
+	-- Client
+	{ "client", "hl2bl/cl_statcard.lua" },
+	{ "client", "hl2bl/cl_leveling_hud.lua" },
+	{ "client", "hl2bl/cl_inventory.lua" },
+	{ "client", "hl2bl/cl_loot_beam.lua" },
+	{ "client", "hl2bl/cl_ammo_hud.lua" },
+	{ "client", "hl2bl/cl_slotbar.lua" },
+	{ "client", "hl2bl/cl_variant_tag.lua" },
+	{ "client", "hl2bl/cl_health_bars.lua" },
+	{ "client", "hl2bl/cl_boss_hud.lua" },
+	{ "client", "hl2bl/cl_vendor.lua" },
+}
+
+-- Load one module for the current realm. On the server, "shared"/"client" files
+-- are also AddCSLuaFile'd so clients receive them.
+local function loadModule( realm, path )
+	if realm == "shared" then
+		if SERVER then AddCSLuaFile( path ) end
+		include( path )
+	elseif realm == "client" then
+		if SERVER then AddCSLuaFile( path ) else include( path ) end
+	elseif realm == "server" then
+		if SERVER then include( path ) end
+	end
 end
 
-local function loadClient( path )
-	if SERVER then AddCSLuaFile( path ) return end
-	include( path )
+-- (Re)load every module in the manifest for the current realm. Re-running an
+-- include() simply re-executes the file, so this picks up edits on disk; modules
+-- use stable hook/net/concommand identifiers, so re-registering replaces in place.
+function HL2BL.LoadModules()
+	for _, m in ipairs( HL2BL.Modules ) do
+		loadModule( m[1], m[2] )
+	end
 end
 
-local function loadServer( path )
-	if SERVER then include( path ) end
-end
-
--- Shared
-loadShared( "hl2bl/sh_archetypes.lua" )
-loadShared( "hl2bl/sh_progression.lua" )
-loadShared( "hl2bl/sh_loot.lua" )
-
--- Server
-loadServer( "hl2bl/sv_variants.lua" )
-loadServer( "hl2bl/sv_spawner.lua" )
-loadServer( "hl2bl/sv_loot_drops.lua" )
-loadServer( "hl2bl/sv_leveling.lua" )
-loadServer( "hl2bl/sv_inventory.lua" )
-loadServer( "hl2bl/sv_economy.lua" )
-loadServer( "hl2bl/sv_vendor.lua" )
-loadServer( "hl2bl/sv_campaign.lua" )
-loadServer( "hl2bl/sv_updatecheck.lua" )
-
--- Client
-loadClient( "hl2bl/cl_statcard.lua" )
-loadClient( "hl2bl/cl_leveling_hud.lua" )
-loadClient( "hl2bl/cl_inventory.lua" )
-loadClient( "hl2bl/cl_loot_beam.lua" )
-loadClient( "hl2bl/cl_ammo_hud.lua" )
-loadClient( "hl2bl/cl_slotbar.lua" )
-loadClient( "hl2bl/cl_variant_tag.lua" )
-loadClient( "hl2bl/cl_boss_hud.lua" )
-loadClient( "hl2bl/cl_vendor.lua" )
+HL2BL.LoadModules()
 
 print( "[HL2BL] v" .. HL2BL.Version .. " loaded (" .. ( SERVER and "server" or "client" ) .. ")" )
+
+-- Hot reload --------------------------------------------------------------------
+-- hl2bl_reload re-executes every module from disk without a map change. On a
+-- listen server the host's client realm reads the same symlinked files, so the
+-- server reloads its realm then tells connected clients to reload theirs.
+if SERVER then
+	util.AddNetworkString( "HL2BL_Reload" )
+
+	concommand.Add( "hl2bl_reload", function( ply )
+		-- Allow from the dedicated/listen console (ply == NULL) or a superadmin.
+		if IsValid( ply ) and not ply:IsSuperAdmin() then
+			ply:ChatPrint( "[HL2BL] hl2bl_reload requires superadmin." )
+			return
+		end
+		HL2BL.LoadModules()
+		print( "[HL2BL] reloaded server + shared modules" )
+		net.Start( "HL2BL_Reload" )
+		net.Broadcast()
+	end, nil, "hl2bl: re-execute all modules from disk (server + connected clients)." )
+else
+	net.Receive( "HL2BL_Reload", function()
+		HL2BL.LoadModules()
+		print( "[HL2BL] reloaded client + shared modules" )
+	end )
+
+	-- Let a client trigger a reload locally too (useful on a listen-server host).
+	concommand.Add( "hl2bl_reload_cl", function()
+		HL2BL.LoadModules()
+		print( "[HL2BL] reloaded client + shared modules (local)" )
+	end, nil, "hl2bl: re-execute client + shared modules locally." )
+end
 
 -- Quick verification command (registered in both realms so it works from the
 -- client console in-game). Note: addon Lua only loads once a map is running,

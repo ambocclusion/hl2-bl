@@ -9,13 +9,8 @@ HL2BL = HL2BL or {}
 HL2BL.BadassChance = CreateConVar( "hl2bl_badass_chance", "0.08", FCVAR_ARCHIVE,
 	"Chance a hostile NPC becomes a Badass." )
 
--- Hostile classes we augment (friendlies like citizens/vortigaunts excluded).
-HL2BL.EnemyClasses = {
-	npc_combine_s = true, npc_metropolice = true, npc_manhack = true,
-	npc_antlion = true, npc_antlionguard = true, npc_stalker = true, npc_hunter = true,
-	npc_zombie = true, npc_fastzombie = true, npc_poisonzombie = true, npc_zombine = true,
-	npc_headcrab = true, npc_headcrab_fast = true, npc_headcrab_black = true,
-}
+-- Hostile classes we augment (HL2BL.EnemyClasses) live in sh_enemies.lua, shared
+-- so the client health-bar HUD can identify enemies too.
 
 -- Variant definitions (rolled after the Badass check).
 local VARIANTS = {
