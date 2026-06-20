@@ -159,9 +159,15 @@ local function pickupLoot( ply, wep )
 	SafeRemoveEntity( wep )
 end
 
--- Never auto-pick-up loot by walking over it...
-hook.Add( "PlayerCanPickupWeapon", "hl2bl_block_autopickup", function( ply, wep )
-	if IsValid( wep ) and wep.HL2BL_IsLoot then return false end
+-- Weapon pickup rules:
+--   * HL2BL loot           -> blocked here (picked up only via +use, below)
+--   * our slot weapons     -> allowed (given by the inventory system)
+--   * vanilla NPC/map guns -> blocked entirely (only random loot is acquirable)
+hook.Add( "PlayerCanPickupWeapon", "hl2bl_pickup_rules", function( ply, wep )
+	if not IsValid( wep ) then return end
+	if wep.HL2BL_IsLoot then return false end
+	if string.StartWith( wep:GetClass(), "hl2bl_" ) then return end
+	return false
 end )
 
 -- ...pick it up only on +use (look at the gun, press E).

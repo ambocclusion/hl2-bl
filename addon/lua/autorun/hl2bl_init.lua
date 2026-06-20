@@ -36,6 +36,7 @@ loadServer( "hl2bl/sv_economy.lua" )
 loadServer( "hl2bl/sv_vendor.lua" )
 loadServer( "hl2bl/sv_campaign.lua" )
 loadServer( "hl2bl/sv_updatecheck.lua" )
+loadServer( "hl2bl/sv_debug.lua" )
 
 -- Client
 loadClient( "hl2bl/cl_statcard.lua" )
@@ -47,6 +48,7 @@ loadClient( "hl2bl/cl_slotbar.lua" )
 loadClient( "hl2bl/cl_variant_tag.lua" )
 loadClient( "hl2bl/cl_boss_hud.lua" )
 loadClient( "hl2bl/cl_vendor.lua" )
+loadClient( "hl2bl/cl_debug.lua" )
 
 print( "[HL2BL] v" .. HL2BL.Version .. " loaded (" .. ( SERVER and "server" or "client" ) .. ")" )
 
