@@ -25,6 +25,7 @@ HL2BL.Modules = {
 	{ "server", "hl2bl/sv_vendor.lua" },
 	{ "server", "hl2bl/sv_campaign.lua" },
 	{ "server", "hl2bl/sv_updatecheck.lua" },
+	{ "server", "hl2bl/sv_debug.lua" },
 	-- Client
 	{ "client", "hl2bl/cl_statcard.lua" },
 	{ "client", "hl2bl/cl_leveling_hud.lua" },
@@ -36,6 +37,7 @@ HL2BL.Modules = {
 	{ "client", "hl2bl/cl_health_bars.lua" },
 	{ "client", "hl2bl/cl_boss_hud.lua" },
 	{ "client", "hl2bl/cl_vendor.lua" },
+	{ "client", "hl2bl/cl_debug.lua" },
 }
 
 -- Load one module for the current realm. On the server, "shared"/"client" files
