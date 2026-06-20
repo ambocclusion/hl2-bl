@@ -118,8 +118,11 @@ Modules in `addon/lua/hl2bl/`:
 - `sv_variants.lua` — every hostile NPC (`EnemyClasses`) is level-scaled and may
   roll a variant: Badass (5x hp, big, guaranteed great loot), Armored, Runner;
   tints/scales/speeds + chat announce. Sets `HL2BL_LootLuck`/`HL2BL_ForceDrop`.
-- `sv_spawner.lua` — spawn director: steady waves of enemies at traced floor
-  spots near players, out of sight (no navmesh needed). `cl_variant_tag` shows
+- `sv_spawner.lua` — **encounter director**: moving into a new area spawns a finite
+  budget of enemies (with variance) over a few ticks at traced floor spots out of
+  sight, then STOPS once cleared; next area starts the next encounter after a
+  cooldown. Clear performance (deaths/health/speed) drives `HL2BL.Difficulty`,
+  which sizes future encounters. Boss every N encounters. `cl_variant_tag` shows
   variant nameplates.
 - `sv_loot_drops.lua` — NPC death rolls a gun drop (elite/boss by max-health +
   variant luck/forced-drop) or an ammo top-up; rarity-scaled drop fanfare.
@@ -145,8 +148,9 @@ Modules in `addon/lua/hl2bl/`:
 - `hl2bl_rolltest [itemLevel]` — print sample rolls.
 - `give hl2bl_smg` (or `_pistol/_shotgun/_rifle/_sniper`) — spawn a gun.
 - `hl2bl_drop_chance <0..1>` (0.4), `hl2bl_ammo_chance <0..1>` (0.35).
-- `hl2bl_spawn_enabled/interval/max/wave` — spawn director (waves scale with
-  player count + avg level). `hl2bl_boss_every <N>` (5) — boss every N waves.
+- `hl2bl_spawn_enabled` + encounter director: `hl2bl_encounter_base/max/cooldown/
+  travel`, `hl2bl_director_tick`, `hl2bl_spawn_wave` (per-tick), `hl2bl_spawn_max`
+  (concurrent cap), `hl2bl_boss_every <N>` (boss every N encounters).
 - `hl2bl_badass_chance <0..1>` (0.08) — variant roll chance.
 - `hl2bl_campaign_start` / `hl2bl_campaign_next` (superadmin) — campaign maps.
 - `hl2bl_campaign_auto <0|1>` (1) — auto-advance at level transitions.
