@@ -61,8 +61,13 @@ any gamemode, so the gamemode itself is intentionally thin (loadout control).
 scripts/install.sh         # END-USER install: COPIES addon+gamemode into GMod
                            #   (auto-detects GMod across Steam libraries; survives
                            #    moving/deleting the repo). Override: GMOD_DIR=...
+scripts/update.sh          # pull latest from git + reinstall (auto-updater)
 scripts/install-hooks.sh   # one-time: core.hooksPath=.githooks
 scripts/deploy.sh          # DEV: symlink addon/ -> addons/hl2bl AND gamemodes/ (live edits)
+# Windows: each script has a .ps1 equivalent (+ double-click .bat wrapper):
+#   install.ps1/.bat, update.ps1/.bat, deploy.ps1/.bat, run.ps1/.bat, install-hooks.ps1/.bat
+# In-game: sv_updatecheck.lua warns superadmins (via GitHub version.txt) when an
+#   update is available; hl2bl_update_check 0 to disable.
 scripts/run.sh [map]       # launch GMod via Steam (default gm_construct;
                            #   pass an HL2 map like d1_trainstation_02 to test co-op campaign)
 ```
