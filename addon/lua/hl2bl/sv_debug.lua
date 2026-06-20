@@ -28,6 +28,10 @@ local function resetSave( ply )
 	if ply:Alive() then ply:SetHealth( 100 ) end
 
 	if HL2BL.SyncInventory then HL2BL.SyncInventory( ply ) end
+	if HL2BL.GiveStarterCrowbar then
+		HL2BL.GiveStarterCrowbar( ply )
+		ply:SelectWeapon( "hl2bl_crowbar" )
+	end
 	ply:ChatPrint( "[HL2BL] Your save has been reset." )
 end
 

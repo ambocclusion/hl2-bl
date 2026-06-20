@@ -34,7 +34,24 @@ HL2BL.Archetypes = {
 		name = "Sniper", hold = "crossbow", auto = false,
 		vm = "models/weapons/c_crossbow.mdl", wm = "models/weapons/w_crossbow.mdl",
 		dmg = 90, rpm = 50, spread = 0.002, shots = 1, reload = 2.5, clip = 5,
-		recoil = 1.2, reserve = 10, sound = "Weapon_Crossbow.Single",
+		recoil = 1.2, reserve = 10, sound = "Weapon_Crossbow.Single", zoomFOV = 25,
+	},
+
+	-- Melee archetypes (melee=true): swing trace instead of bullets, no ammo.
+	-- Unused gun fields (spread/shots/reload/clip/reserve) kept harmless.
+	crowbar = {
+		name = "Crowbar", hold = "melee", auto = true, melee = true, range = 72,
+		vm = "models/weapons/c_crowbar.mdl", wm = "models/weapons/w_crowbar.mdl",
+		dmg = 25, rpm = 100, spread = 0, shots = 1, reload = 0, clip = 1,
+		recoil = 0.6, reserve = 0, sound = "Weapon_Crowbar.Single",
+		hitSound = "Weapon_Crowbar.Melee_Hit",
+	},
+	stunbaton = {
+		name = "Stun Baton", hold = "melee", auto = true, melee = true, range = 64,
+		vm = "models/weapons/c_stunstick.mdl", wm = "models/weapons/w_stunbaton.mdl",
+		dmg = 18, rpm = 140, spread = 0, shots = 1, reload = 0, clip = 1,
+		recoil = 0.5, reserve = 0, sound = "Weapon_StunStick.Swing",
+		hitSound = "Weapon_StunStick.Melee_Hit",
 	},
 }
 
